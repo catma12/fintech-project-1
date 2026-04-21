@@ -1,0 +1,5 @@
+model,avg_sharpe,avg_ic,note
+v4c (report ref),0.16625,0.044,Pooled XGBoost ranker with macro + momentum baseline in report
+LightGBM v7 (tuned+global FS),0.23195,0.0281,Optuna-tuned LightGBM ranker with global macro top-60% selection
+v8-1 Weighted Ensemble,0.229025,0.03435,"Simplex-weighted blend of LR, RF, LightGBM, and CatBoost OOF signals"
+v8-2 LightGBM (horizon-specific FS),0.276925,0.0296,Best notebook model; horizon-specific macro feature selection

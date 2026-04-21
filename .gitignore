@@ -1,0 +1,12 @@
+__pycache__/
+*.pyc
+*.pyo
+.ipynb_checkpoints/
+.venv/
+venv/
+.env
+.DS_Store
+
+.claude/
+
+# Do NOT ignore outputs — intermediate artifacts are versioned for reproducibility

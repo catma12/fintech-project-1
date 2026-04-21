@@ -1,0 +1,318 @@
+{
+  "milestone_a_var_shocks": {
+    "timestamp": "2026-04-19T22:10:11.855308+00:00",
+    "git_sha": "unknown",
+    "seed": 42,
+    "panel_sha256": "6c3c8641a307deefb13ce264cc6983a54bdf8e3a3b333f60aaaf8b1c590cefd6",
+    "artifacts": {
+      "shocks": "outputs\\shocks\\shocks_v1.parquet",
+      "decomposition_plot": "outputs/report/figures/historical_decomposition.png",
+      "var_lags": 24,
+      "var_variables": [
+        "dprod",
+        "kilian_rea",
+        "real_oil_price_diff"
+      ],
+      "n_shocks": 456,
+      "validation": {
+        "precaut_peaks": {
+          "Gulf War": {
+            "peak_z": 3.629591164996302,
+            "peak_date": "1990-09-30"
+          },
+          "Iraq buildup": {
+            "peak_z": 1.2922712391584399,
+            "peak_date": "2003-02-28"
+          },
+          "Russia-Ukraine": {
+            "peak_z": 1.843963813827856,
+            "peak_date": "2022-02-28"
+          }
+        },
+        "agg_demand_china_mean": 0.4563735636826187,
+        "threshold_z": 1.25,
+        "passed": true
+      }
+    }
+  },
+  "milestone_b_targets": {
+    "timestamp": "2026-04-19T22:16:38.604280+00:00",
+    "git_sha": "266bd834b2fcaef2c361622dfb4b02dc6b15d34f",
+    "seed": 42,
+    "panel_sha256": "6c3c8641a307deefb13ce264cc6983a54bdf8e3a3b333f60aaaf8b1c590cefd6",
+    "artifacts": {
+      "targets": "outputs/targets/Y_v1.parquet",
+      "targets_sign": "outputs/targets/Y_sign_v1.parquet",
+      "n_targets": 48,
+      "sectors": [
+        "NoDur",
+        "Durbl",
+        "Manuf",
+        "Enrgy",
+        "Chems",
+        "BusEq",
+        "Telcm",
+        "Utils",
+        "Shops",
+        "Hlth",
+        "Money",
+        "Other"
+      ],
+      "horizons": [
+        1,
+        3,
+        6,
+        12
+      ],
+      "alignment_check": {
+        "passed": true,
+        "h1_check": -0.2122,
+        "h3_check": -0.07529999999999998
+      }
+    }
+  },
+  "milestone_b_features": {
+    "timestamp": "2026-04-19T22:16:57.205773+00:00",
+    "git_sha": "266bd834b2fcaef2c361622dfb4b02dc6b15d34f",
+    "seed": 42,
+    "panel_sha256": "6c3c8641a307deefb13ce264cc6983a54bdf8e3a3b333f60aaaf8b1c590cefd6",
+    "artifacts": {
+      "features": "outputs/features/X_v1.parquet",
+      "feature_summary": "outputs/report/tables/feature_summary.csv",
+      "n_features": 33,
+      "n_rows": 456,
+      "features_list": [
+        "eps_supply",
+        "eps_agg_demand",
+        "eps_precaut",
+        "eps_supply_lag1",
+        "eps_supply_lag2",
+        "eps_supply_lag3",
+        "eps_agg_demand_lag1",
+        "eps_agg_demand_lag2",
+        "eps_agg_demand_lag3",
+        "eps_precaut_lag1",
+        "eps_precaut_lag2",
+        "eps_precaut_lag3",
+        "eps_supply_cum3m",
+        "eps_agg_demand_cum3m",
+        "eps_precaut_cum3m",
+        "dom_is_supply",
+        "dom_is_agg_demand",
+        "dom_is_precaut",
+        "shock_sign",
+        "shock_magnitude",
+        "contamination_flag",
+        "vix_level",
+        "vix_regime",
+        "vix_is_proxy",
+        "fed_regime_num",
+        "credit_spread_ig",
+        "credit_spread_hy",
+        "hy_available",
+        "Recession",
+        "oil_ret_3m",
+        "oil_ret_12m",
+        "net_oil_price_3yr",
+        "oil_vol_6m_monthly"
+      ]
+    }
+  },
+  "milestone_c_training": {
+    "timestamp": "2026-04-19T22:26:36.363283+00:00",
+    "git_sha": "910bfa17a20e2d280a8cda71b67d8a864df0b313",
+    "seed": 42,
+    "panel_sha256": "6c3c8641a307deefb13ce264cc6983a54bdf8e3a3b333f60aaaf8b1c590cefd6",
+    "artifacts": {
+      "oof_reg": "outputs/oof/oof_reg_v1.parquet",
+      "oof_clf": "outputs/oof/oof_clf_v1.parquet",
+      "metrics": "outputs/report/tables/oof_metrics.csv",
+      "n_models": 96,
+      "reg_mean_r2": -0.2711325354715368,
+      "reg_mean_directional_acc": 0.49648723723723726,
+      "clf_mean_accuracy": 0.49623798798798796,
+      "clf_mean_f1": 0.4634941561586416,
+      "xgb_params": {
+        "n_estimators": 300,
+        "max_depth": 3,
+        "learning_rate": 0.03,
+        "subsample": 0.8,
+        "colsample_bytree": 0.8,
+        "min_child_weight": 5,
+        "reg_alpha": 0.5,
+        "reg_lambda": 1.0,
+        "random_state": 42,
+        "tree_method": "hist",
+        "n_jobs": 4
+      }
+    }
+  },
+  "milestone_d_shap": {
+    "timestamp": "2026-04-19T22:36:30.948672+00:00",
+    "git_sha": "684d0bfedea33e49401cde17ed54304d572593e6",
+    "seed": 42,
+    "panel_sha256": "6c3c8641a307deefb13ce264cc6983a54bdf8e3a3b333f60aaaf8b1c590cefd6",
+    "artifacts": {
+      "shap_dir": "outputs/shap/",
+      "figures": [
+        "outputs/report/figures/shap_global_bar_h6.png",
+        "outputs/report/figures/shap_dependence_eps_precaut_vix_regime_Shops_h6.png",
+        "outputs/report/figures/shap_dependence_eps_precaut_vix_regime_Enrgy_h6.png",
+        "outputs/report/figures/shap_waterfall_Enrgy_h6_2008-09_GFC.png",
+        "outputs/report/figures/shap_waterfall_Enrgy_h6_2014-11_SaudiSupply.png",
+        "outputs/report/figures/shap_waterfall_Enrgy_h6_2020-03_COVID.png",
+        "outputs/report/figures/shap_waterfall_Enrgy_h6_2022-02_Russia.png",
+        "outputs/report/figures/shap_heatmap_h6.png"
+      ],
+      "n_shap_arrays": 48,
+      "event_dates": {
+        "2008-09_GFC": "2008-09-30",
+        "2014-11_SaudiSupply": "2014-11-30",
+        "2020-03_COVID": "2020-03-31",
+        "2022-02_Russia": "2022-02-28"
+      }
+    }
+  },
+  "milestone_c_v2": {
+    "timestamp": "2026-04-19T23:58:44.101078+00:00",
+    "git_sha": "81473067dd19b1eaa98a265af90e00ab1213adc6",
+    "seed": 42,
+    "panel_sha256": "6c3c8641a307deefb13ce264cc6983a54bdf8e3a3b333f60aaaf8b1c590cefd6",
+    "artifacts": {
+      "oof_xgb": "outputs/oof/oof_pooled_xgb_v2.parquet",
+      "oof_clf": "outputs/oof/oof_pooled_clf_v2.parquet",
+      "oof_ridge": "outputs/oof/oof_pooled_ridge_v2.parquet",
+      "metrics": "outputs/report/tables/oof_metrics_v2.csv",
+      "comparison": "outputs/report/tables/v1_v2_comparison.csv",
+      "xgb_mean_r2": -0.033864487082395985,
+      "xgb_mean_edge": -0.08984834834834833,
+      "clf_mean_edge": -0.07667267267267266,
+      "ridge_mean_r2": -0.10379872658823197,
+      "ridge_mean_edge": -0.056987987987987966,
+      "v1_mean_edge": -0.06037387387387389,
+      "v2_xgb_reg_mean_edge": -0.08984834834834833,
+      "v2_xgb_clf_mean_edge": -0.07667267267267266,
+      "pooled_xgb_params": {
+        "n_estimators": 500,
+        "max_depth": 3,
+        "learning_rate": 0.05,
+        "subsample": 0.8,
+        "colsample_bytree": 0.7,
+        "min_child_weight": 10,
+        "reg_alpha": 0.5,
+        "reg_lambda": 1.0,
+        "random_state": 42,
+        "tree_method": "hist",
+        "n_jobs": 4
+      },
+      "trimmed_features": [
+        "eps_supply",
+        "eps_agg_demand",
+        "eps_precaut",
+        "eps_supply_lag1",
+        "eps_agg_demand_lag1",
+        "eps_precaut_lag1",
+        "contamination_flag",
+        "vix_level",
+        "vix_regime",
+        "fed_regime_num",
+        "credit_spread_ig",
+        "credit_spread_hy",
+        "hy_available",
+        "Recession",
+        "oil_ret_3m",
+        "oil_ret_12m",
+        "net_oil_price_3yr",
+        "oil_vol_6m_monthly"
+      ]
+    }
+  },
+  "milestone_c_v3_ranking": {
+    "timestamp": "2026-04-20T00:07:41.541999+00:00",
+    "git_sha": "1de15f0520ec2df725ef77e30c077fdfc71f00ac",
+    "seed": 42,
+    "panel_sha256": "6c3c8641a307deefb13ce264cc6983a54bdf8e3a3b333f60aaaf8b1c590cefd6",
+    "artifacts": {
+      "oof_scores": "outputs/oof/ranker_scores_v3.parquet",
+      "long_short_returns": "outputs/oof/long_short_returns_v3.parquet",
+      "per_month_metrics": "outputs/report/tables/ranking_metrics_per_month_v3.csv",
+      "summary": "outputs/report/tables/ranking_summary_v3.csv",
+      "figures": [
+        "outputs/report/figures/v3_long_short_cumulative.png",
+        "outputs/report/figures/v3_sector_selection_freq.png"
+      ],
+      "ranker_params": {
+        "objective": "rank:pairwise",
+        "n_estimators": 500,
+        "max_depth": 3,
+        "learning_rate": 0.05,
+        "subsample": 0.8,
+        "colsample_bytree": 0.7,
+        "min_child_weight": 10,
+        "reg_alpha": 0.5,
+        "reg_lambda": 1.0,
+        "random_state": 42,
+        "tree_method": "hist",
+        "n_jobs": 4
+      },
+      "summary_by_horizon": {
+        "1": {
+          "sharpe_ann": 0.14539778723155045,
+          "t_stat": 0.8127983400694943,
+          "mean_spearman": 0.007121636297210255,
+          "top3_hit_rate": 0.2631111111111111,
+          "hit_rate": 0.5146666666666667
+        },
+        "3": {
+          "sharpe_ann": -0.27953479237542667,
+          "t_stat": -2.706583988888939,
+          "mean_spearman": -0.05373765968665917,
+          "top3_hit_rate": 0.25333333333333335,
+          "hit_rate": 0.4186666666666667
+        },
+        "6": {
+          "sharpe_ann": 0.07695707664424777,
+          "t_stat": 1.0537781709427119,
+          "mean_spearman": 0.001148138065991331,
+          "top3_hit_rate": 0.2871111111111111,
+          "hit_rate": 0.488
+        },
+        "12": {
+          "sharpe_ann": -0.24713649917459393,
+          "t_stat": -4.753765477280237,
+          "mean_spearman": -0.043329482300866105,
+          "top3_hit_rate": 0.245045045045045,
+          "hit_rate": 0.4189189189189189
+        }
+      }
+    }
+  },
+  "milestone_c_v4_momentum": {
+    "timestamp": "2026-04-20T00:36:27.686632+00:00",
+    "git_sha": "8d4fa29fa01a8885c1f4b14fc711b9fcb31748e9",
+    "seed": 42,
+    "panel_sha256": "6c3c8641a307deefb13ce264cc6983a54bdf8e3a3b333f60aaaf8b1c590cefd6",
+    "artifacts": {
+      "v4a_oof": "outputs/oof/oof_reg_v4a.parquet",
+      "v4a_metrics": "outputs/report/tables/oof_metrics_v4a.csv",
+      "v4a_mean_r2": -0.2461735112111294,
+      "v4a_mean_edge": -0.0534084084084084,
+      "v4b_oof": "outputs/oof/oof_pooled_xgb_v4b.parquet",
+      "v4b_metrics": "outputs/report/tables/oof_metrics_v4b.csv",
+      "v4b_mean_r2": -0.037286855360729176,
+      "v4b_mean_edge": -0.08364189189189188,
+      "v4c_scores": "outputs/oof/ranker_scores_v4c.parquet",
+      "v4c_summary": "outputs/report/tables/ranking_summary_v4c.csv",
+      "v4c_mean_sharpe": 0.16637132151344688,
+      "v4c_mean_top3_hit": 0.26797897897897893,
+      "comparison": "outputs/report/tables/v1v2v3_vs_v4_comparison.csv",
+      "momentum_features": [
+        "own_ret_1m",
+        "own_ret_3m",
+        "own_mom_12_1",
+        "own_vol_6m",
+        "cross_rank_12_1"
+      ]
+    }
+  }
+}

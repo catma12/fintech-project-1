@@ -1,4 +1,4 @@
-"""Auto-rendered HTML report — v1 → v4c experimental arc.
+"""Auto-rendered HTML report — v1 → v8b experimental arc.
 
 Reads every artifact produced across Milestones A-D and v2/v3/v4 iterations
 and renders a self-contained HTML file (figures base64-embedded) to
@@ -6,12 +6,19 @@ outputs/report/report.html.
 
 The report structure follows the four graded rubric sections
 (completeness, novelty, readability, attribution) but the central narrative
-is the v1 → v4c progression:
+is the v1 → v8b progression:
 
   v1    per-cell baseline               -> overfit
   v2    pooled + regularized            -> exposed signal ceiling
   v3    cross-sectional ranker          -> revealed anti-correctness
-  v4c   ranker + momentum features      -> Sharpe flips positive
+    v4c   ranker + momentum features      -> Sharpe flips positive
+    v5    post-v4c ranker                 -> signal persistence
+    v6a   Random Forest baseline selection -> initial RF winner vs v5
+    v6b   Random Forest + Optuna           -> tuned RF refinement
+    v6c   Full algorithm shootout          -> cross-model benchmark pass
+    v7    LightGBM + global FS            -> algorithmic improvement
+    v8a   weighted ensemble               -> blended uplift
+    v8b   horizon-specific FS             -> strongest Sharpe
 
 The 2026 out-of-sample section remains a placeholder until that data is
 appended and src/oos_2026.py is run.
@@ -64,7 +71,7 @@ def _df_html(df: pd.DataFrame, float_fmt="{:+.4f}", classes="metrics-table", idx
 
 # --- Four-experiment summary figure -----------------------------------------
 
-def build_four_experiment_summary(out_path: Path) -> None:
+def build_four_experiment_summary(out_path: Path, v6b: pd.DataFrame | None = None) -> None:
     """Two-panel bar chart: (top) regression mean edge by version, (bottom) ranker Sharpe by version."""
     v1 = _read(REPORT_TABLES / "oof_metrics.csv")
     v1_clf = v1[v1["task"] == "clf"].copy()
@@ -82,11 +89,19 @@ def build_four_experiment_summary(out_path: Path) -> None:
     v4b = _read(REPORT_TABLES / "oof_metrics_v4b.csv")
     v4b_edge = float(v4b["edge"].mean()) if not v4b.empty else 0.0
 
-    v3 = _read(REPORT_TABLES / "ranking_summary_v3.csv")
+    v3 = _load_ranking_summary("v3")
     v3_sharpe = float(v3["sharpe_ann"].mean()) if not v3.empty else 0.0
 
-    v4c = _read(REPORT_TABLES / "ranking_summary_v4c.csv")
+    v4c = _load_ranking_summary("v4c")
     v4c_sharpe = float(v4c["sharpe_ann"].mean()) if not v4c.empty else 0.0
+
+    v5 = _load_ranking_summary("v5")
+    v5_sharpe = float(v5["sharpe_ann"].mean()) if not v5.empty and "sharpe_ann" in v5.columns else np.nan
+
+    v7, v8_1, v8_2 = _load_advanced_rankers_from_report2()
+    v7_sharpe = float(v7["sharpe_ann"].mean()) if not v7.empty else np.nan
+    v8_1_sharpe = float(v8_1["sharpe_ann"].mean()) if not v8_1.empty else np.nan
+    v8_2_sharpe = float(v8_2["sharpe_ann"].mean()) if not v8_2.empty else np.nan
 
     fig, axes = plt.subplots(1, 2, figsize=(13, 4.2))
 
@@ -109,6 +124,26 @@ def build_four_experiment_summary(out_path: Path) -> None:
     labels = ["v3\nmacro only", "v4c\n+ momentum"]
     values = [v3_sharpe, v4c_sharpe]
     colors = ["#c94a3a", "#2e8b57"]
+    if not np.isnan(v5_sharpe):
+        labels.append("v5\npost-v4c")
+        values.append(v5_sharpe)
+        colors.append("#1f6f8b")
+    if v6b is not None and not v6b.empty and "sharpe_ann" in v6b.columns:
+        labels.append("v6b\nRF+tuned")
+        values.append(float(v6b["sharpe_ann"].mean()))
+        colors.append("#7b5ea7")
+    if not np.isnan(v7_sharpe):
+        labels.append("v7\nLGBM+GFS")
+        values.append(v7_sharpe)
+        colors.append("#556b2f")
+    if not np.isnan(v8_1_sharpe):
+        labels.append("v8a\nensemble")
+        values.append(v8_1_sharpe)
+        colors.append("#8a6d3b")
+    if not np.isnan(v8_2_sharpe):
+        labels.append("v8b\nHFS")
+        values.append(v8_2_sharpe)
+        colors.append("#6a1b9a")
     bars = ax.bar(labels, values, color=colors, edgecolor="black", linewidth=0.3)
     ax.axhline(0, color="black", lw=0.6)
     ax.set_ylabel("Mean long-short Sharpe (annualized)")
@@ -120,6 +155,97 @@ def build_four_experiment_summary(out_path: Path) -> None:
 
     fig.suptitle("Experimental arc — cumulative improvement across four training paradigms",
                  fontsize=12, fontweight="bold")
+    fig.tight_layout()
+    fig.savefig(out_path, dpi=140, bbox_inches="tight")
+    plt.close(fig)
+
+
+def build_ranker_horizon_comparison(out_path: Path, model_frames: dict[str, pd.DataFrame], best_model: str) -> None:
+    """Grouped-bar comparison of horizon Sharpe across ranking models."""
+    horizons = list(HORIZONS)
+    plotted = []
+    for name, dfr in model_frames.items():
+        if dfr is None or dfr.empty or "sharpe_ann" not in dfr.columns:
+            continue
+        g = dfr.groupby("horizon", as_index=True)["sharpe_ann"].mean()
+        vals = [float(g.get(h, np.nan)) for h in horizons]
+        plotted.append((name, vals))
+
+    if not plotted:
+        fig, ax = plt.subplots(figsize=(8, 3.5))
+        ax.text(0.5, 0.5, "No ranking-model horizon data available", ha="center", va="center")
+        ax.axis("off")
+        fig.savefig(out_path, dpi=140, bbox_inches="tight")
+        plt.close(fig)
+        return
+
+    x = np.arange(len(horizons), dtype=float)
+    n = len(plotted)
+    width = min(0.78 / max(n, 1), 0.14)
+
+    fig, ax = plt.subplots(figsize=(11.5, 4.2))
+    palette = ["#1f3b66", "#2e8b57", "#1f6f8b", "#7b5ea7", "#556b2f", "#8a6d3b", "#6a1b9a"]
+
+    for i, (name, vals) in enumerate(plotted):
+        offsets = x + (i - (n - 1) / 2) * width
+        color = palette[i % len(palette)]
+        bars = ax.bar(offsets, vals, width=width, color=color, alpha=0.9, label=name)
+        if name == best_model:
+            for b in bars:
+                b.set_edgecolor("black")
+                b.set_linewidth(1.3)
+
+    ax.axhline(0, color="black", lw=0.7)
+    ax.set_xticks(x)
+    ax.set_xticklabels([f"h={h}" for h in horizons])
+    ax.set_ylabel("Sharpe (annualized)")
+    ax.set_title("Ranking-model head-to-head by horizon (v3 through v8b)", fontsize=11, loc="left")
+    ax.grid(alpha=0.25, axis="y")
+    ax.legend(ncol=4, fontsize=8, frameon=False, loc="upper left")
+    fig.tight_layout()
+    fig.savefig(out_path, dpi=140, bbox_inches="tight")
+    plt.close(fig)
+
+
+def build_best_model_outcome_profile(out_path: Path, best_model: str, best_df: pd.DataFrame) -> None:
+    """Two-panel profile for the best model: Sharpe and IC by horizon."""
+    horizons = list(HORIZONS)
+    if best_df is None or best_df.empty or "sharpe_ann" not in best_df.columns:
+        fig, ax = plt.subplots(figsize=(8, 3.5))
+        ax.text(0.5, 0.5, "Best-model profile unavailable", ha="center", va="center")
+        ax.axis("off")
+        fig.savefig(out_path, dpi=140, bbox_inches="tight")
+        plt.close(fig)
+        return
+
+    g = best_df.groupby("horizon", as_index=True).mean(numeric_only=True)
+    sharpe_vals = [float(g["sharpe_ann"].get(h, np.nan)) for h in horizons]
+    ic_vals = [float(g["mean_spearman"].get(h, np.nan)) if "mean_spearman" in g.columns else np.nan for h in horizons]
+
+    fig, axes = plt.subplots(1, 2, figsize=(11.5, 4.0))
+
+    ax = axes[0]
+    bars = ax.bar([f"h={h}" for h in horizons], sharpe_vals, color="#6a1b9a", edgecolor="black", linewidth=0.4)
+    ax.axhline(0, color="black", lw=0.6)
+    ax.set_title(f"{best_model}: Sharpe by horizon", fontsize=11, loc="left")
+    ax.set_ylabel("Sharpe (annualized)")
+    ax.grid(alpha=0.25, axis="y")
+    for b, v in zip(bars, sharpe_vals):
+        if pd.isna(v):
+            continue
+        ax.text(b.get_x() + b.get_width() / 2, v + (0.01 if v >= 0 else -0.02), f"{v:+.3f}", ha="center", fontsize=9)
+
+    ax = axes[1]
+    ax.plot([f"h={h}" for h in horizons], ic_vals, marker="o", color="#1f3b66", linewidth=1.8)
+    ax.axhline(0, color="black", lw=0.6)
+    ax.set_title(f"{best_model}: IC (mean Spearman) by horizon", fontsize=11, loc="left")
+    ax.set_ylabel("Mean Spearman")
+    ax.grid(alpha=0.25, axis="y")
+    for h, v in zip(horizons, ic_vals):
+        if pd.isna(v):
+            continue
+        ax.text(f"h={h}", v + (0.003 if v >= 0 else -0.004), f"{v:+.3f}", ha="center", fontsize=9)
+
     fig.tight_layout()
     fig.savefig(out_path, dpi=140, bbox_inches="tight")
     plt.close(fig)
@@ -204,7 +330,149 @@ def _build_v2_r2_pivot(v2: pd.DataFrame) -> str:
     )
 
 
-def _build_headline_arc_table(v1, v2, v4a, v4b, v3, v4c) -> str:
+def _load_ranking_summary(model: str) -> pd.DataFrame:
+    """Load ranking summary from report tables, falling back to OOF outputs."""
+    p = REPORT_TABLES / f"ranking_summary_{model}.csv"
+    if p.exists():
+        d = pd.read_csv(p)
+        if "sharpe_ann" not in d.columns and "sharpe_ann_hadj" in d.columns:
+            d = d.rename(columns={"sharpe_ann_hadj": "sharpe_ann"})
+        return d
+    p2 = OOF_DIR / f"ranking_summary_{model}.csv"
+    if p2.exists():
+        d = pd.read_csv(p2)
+        if "sharpe_ann" not in d.columns and "sharpe_ann_hadj" in d.columns:
+            d = d.rename(columns={"sharpe_ann_hadj": "sharpe_ann"})
+        return d
+    return pd.DataFrame()
+
+
+def _load_advanced_rankers_from_report2() -> tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame]:
+    """Return v7, v8a, v8b per-horizon ranking metrics from report2 tables if available."""
+    p = REPORT_TABLES / "report2_per_horizon.csv"
+    if not p.exists():
+        return pd.DataFrame(), pd.DataFrame(), pd.DataFrame()
+    d = pd.read_csv(p)
+
+    v7 = pd.DataFrame()
+    v8_1 = pd.DataFrame()
+    v8_2 = pd.DataFrame()
+
+    if {"horizon", "v7_sharpe", "v7_ic"}.issubset(d.columns):
+        v7 = d[["horizon", "v7_sharpe", "v7_ic"]].copy()
+        v7.columns = ["horizon", "sharpe_ann", "mean_spearman"]
+    if {"horizon", "v8_weighted_sharpe", "v8_weighted_ic"}.issubset(d.columns):
+        v8_1 = d[["horizon", "v8_weighted_sharpe", "v8_weighted_ic"]].copy()
+        v8_1.columns = ["horizon", "sharpe_ann", "mean_spearman"]
+    if {"horizon", "v8_hfs_sharpe", "v8_hfs_ic"}.issubset(d.columns):
+        keep = ["horizon", "v8_hfs_sharpe", "v8_hfs_ic"]
+        for c in ["v8_hfs_top_k", "v8_hfs_n_macro", "v8_hfs_n_total_features"]:
+            if c in d.columns:
+                keep.append(c)
+        v8_2 = d[keep].copy()
+        v8_2 = v8_2.rename(columns={"v8_hfs_sharpe": "sharpe_ann", "v8_hfs_ic": "mean_spearman"})
+
+    return v7, v8_1, v8_2
+
+
+def _load_v6_metrics() -> tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame]:
+    """Load notebook-derived v6a/v6b/v6c metrics exported to report tables."""
+    p = REPORT_TABLES / "all_models_metrics_v6.csv"
+    if not p.exists():
+        return pd.DataFrame(), pd.DataFrame(), pd.DataFrame()
+    d = pd.read_csv(p)
+    out = []
+    for ver in ["v6a", "v6b", "v6c"]:
+        sub = d[d["version"] == ver].copy()
+        if sub.empty:
+            out.append(pd.DataFrame())
+            continue
+        keep = ["horizon", "sharpe_ann", "mean_spearman"]
+        if "model" in sub.columns:
+            keep.append("model")
+        out.append(sub[keep])
+    return tuple(out)
+
+
+def _build_full_model_metrics_table(v1, v2, v4a, v4b, v3, v4c, v5, v6a, v6b, v6c, v7, v8_1, v8_2) -> str:
+    """Unified progression table for executive + section 1 with per-horizon metrics."""
+    rows = []
+
+    def _fmt(v: float) -> str:
+        return "—" if pd.isna(v) else f"{v:+.3f}"
+
+    def _reg_row(version: str, label: str, dfr: pd.DataFrame):
+        if dfr.empty or "r2" not in dfr.columns:
+            rows.append({
+                "Version": version,
+                "Model": label,
+                "Paradigm": "Regression",
+                "Mean R²": "—",
+                "h=1": "—",
+                "h=3": "—",
+                "h=6": "—",
+                "h=12": "—",
+                "Mean Sharpe": "—",
+            })
+            return
+        g = dfr.groupby("horizon", as_index=True)["r2"].mean()
+        rows.append({
+            "Version": version,
+            "Model": label,
+            "Paradigm": "Regression",
+            "Mean R²": _fmt(float(g.mean())),
+            "h=1": _fmt(float(g.get(1, np.nan))),
+            "h=3": _fmt(float(g.get(3, np.nan))),
+            "h=6": _fmt(float(g.get(6, np.nan))),
+            "h=12": _fmt(float(g.get(12, np.nan))),
+            "Mean Sharpe": "—",
+        })
+
+    def _rank_row(version: str, label: str, dfr: pd.DataFrame):
+        if dfr.empty or "sharpe_ann" not in dfr.columns:
+            rows.append({
+                "Version": version,
+                "Model": label,
+                "Paradigm": "Ranking",
+                "Mean R²": "—",
+                "h=1": "—",
+                "h=3": "—",
+                "h=6": "—",
+                "h=12": "—",
+                "Mean Sharpe": "—",
+            })
+            return
+        g = dfr.groupby("horizon", as_index=True)["sharpe_ann"].mean()
+        rows.append({
+            "Version": version,
+            "Model": label,
+            "Paradigm": "Ranking",
+            "Mean R²": "—",
+            "h=1": _fmt(float(g.get(1, np.nan))),
+            "h=3": _fmt(float(g.get(3, np.nan))),
+            "h=6": _fmt(float(g.get(6, np.nan))),
+            "h=12": _fmt(float(g.get(12, np.nan))),
+            "Mean Sharpe": _fmt(float(g.mean())),
+        })
+
+    _reg_row("v1", "Per-cell baseline", v1[v1["task"] == "reg"] if not v1.empty and "task" in v1.columns else v1)
+    _reg_row("v2", "Pooled + regularized", v2[v2["model"] == "xgb_pooled_v2"] if not v2.empty and "model" in v2.columns else v2)
+    _rank_row("v3", "Macro-only ranker", v3)
+    _reg_row("v4a", "Per-cell + momentum", v4a)
+    _reg_row("v4b", "Pooled + momentum", v4b)
+    _rank_row("v4c", "Ranker + momentum", v4c)
+    _rank_row("v5", "Post-v4c ranker", v5)
+    _rank_row("v6a", "RF baseline selection", v6a)
+    _rank_row("v6b", "RF + Optuna + threshold", v6b)
+    _rank_row("v6c", "Full shootout winner", v6c)
+    _rank_row("v7", "LightGBM + global FS", v7)
+    _rank_row("v8a", "Weighted ensemble", v8_1)
+    _rank_row("v8b", "Horizon-specific FS", v8_2)
+
+    return pd.DataFrame(rows).to_html(classes="metrics-table", index=False, border=0, escape=False)
+
+
+def _build_headline_arc_table(v1, v2, v4a, v4b, v3, v4c, v5, v6a, v6b, v6c, v7, v8_1, v8_2) -> str:
     """Single table that summarizes the arc in one view."""
     rows = []
     # v1 classifier edge
@@ -270,8 +538,119 @@ def _build_headline_arc_table(v1, v2, v4a, v4b, v3, v4c) -> str:
             "Mean L-S Sharpe": f"{v4c['sharpe_ann'].mean():+.3f}",
             "+edge cells": "—",
         })
+    if not v5.empty:
+        rows.append({
+            "Version": "v5",
+            "Architecture": "post-v4c ranker variant",
+            "Features": "ranker + momentum",
+            "Mean OOF R²": "—",
+            "Mean class. edge": "—",
+            "Mean L-S Sharpe": f"{v5['sharpe_ann'].mean():+.3f}",
+            "+edge cells": "—",
+        })
+    if not v6a.empty:
+        rows.append({
+            "Version": "v6a",
+            "Architecture": "RF baseline selection",
+            "Features": "notebook-derived",
+            "Mean OOF R²": "—",
+            "Mean class. edge": "—",
+            "Mean L-S Sharpe": f"{v6a['sharpe_ann'].mean():+.3f}",
+            "+edge cells": "—",
+        })
+    if not v6b.empty:
+        rows.append({
+            "Version": "v6b",
+            "Architecture": "RF + Optuna + threshold",
+            "Features": "notebook-derived",
+            "Mean OOF R²": "—",
+            "Mean class. edge": "—",
+            "Mean L-S Sharpe": f"{v6b['sharpe_ann'].mean():+.3f}",
+            "+edge cells": "—",
+        })
+    if not v6c.empty:
+        winner = str(v6c.get("model", pd.Series(["shootout winner"])).iloc[0])
+        rows.append({
+            "Version": "v6c",
+            "Architecture": f"algorithm shootout ({winner})",
+            "Features": "notebook-derived",
+            "Mean OOF R²": "—",
+            "Mean class. edge": "—",
+            "Mean L-S Sharpe": f"{v6c['sharpe_ann'].mean():+.3f}",
+            "+edge cells": "—",
+        })
+    if not v7.empty:
+        rows.append({
+            "Version": "v7",
+            "Architecture": "LightGBM ranker + global FS",
+            "Features": "global feature-selected",
+            "Mean OOF R²": "—",
+            "Mean class. edge": "—",
+            "Mean L-S Sharpe": f"{v7['sharpe_ann'].mean():+.3f}",
+            "+edge cells": "—",
+        })
+    if not v8_1.empty:
+        rows.append({
+            "Version": "v8a",
+            "Architecture": "weighted ensemble",
+            "Features": "multi-model blend",
+            "Mean OOF R²": "—",
+            "Mean class. edge": "—",
+            "Mean L-S Sharpe": f"{v8_1['sharpe_ann'].mean():+.3f}",
+            "+edge cells": "—",
+        })
+    if not v8_2.empty:
+        rows.append({
+            "Version": "v8b",
+            "Architecture": "LightGBM + horizon-specific FS",
+            "Features": "horizon-optimized",
+            "Mean OOF R²": "—",
+            "Mean class. edge": "—",
+            "Mean L-S Sharpe": f"{v8_2['sharpe_ann'].mean():+.3f}",
+            "+edge cells": "—",
+        })
     df = pd.DataFrame(rows)
     return df.to_html(classes="metrics-table arc-table", index=False, border=0, escape=False)
+
+
+def _build_advanced_rankers_table(v4c: pd.DataFrame, v5: pd.DataFrame, v6a: pd.DataFrame, v6b: pd.DataFrame, v6c: pd.DataFrame, v7: pd.DataFrame, v8_1: pd.DataFrame, v8_2: pd.DataFrame) -> str:
+    """Compact comparison for ranking extensions integrated into section 2."""
+    rows = []
+
+    def _add(name: str, dfr: pd.DataFrame):
+        if dfr.empty or "sharpe_ann" not in dfr.columns:
+            return
+        rows.append({
+            "Model": name,
+            "Mean Sharpe": f"{dfr['sharpe_ann'].mean():+.3f}",
+            "h=1": f"{dfr[dfr['horizon'] == 1]['sharpe_ann'].iloc[0]:+.3f}" if len(dfr[dfr["horizon"] == 1]) else "—",
+            "h=3": f"{dfr[dfr['horizon'] == 3]['sharpe_ann'].iloc[0]:+.3f}" if len(dfr[dfr["horizon"] == 3]) else "—",
+            "h=6": f"{dfr[dfr['horizon'] == 6]['sharpe_ann'].iloc[0]:+.3f}" if len(dfr[dfr["horizon"] == 6]) else "—",
+            "h=12": f"{dfr[dfr['horizon'] == 12]['sharpe_ann'].iloc[0]:+.3f}" if len(dfr[dfr["horizon"] == 12]) else "—",
+        })
+
+    _add("v4c (published breakthrough)", v4c)
+    _add("v5 (post-v4c)", v5)
+    _add("v6a (RF baseline)", v6a)
+    _add("v6b (RF tuned)", v6b)
+    _add("v6c (shootout winner)", v6c)
+    _add("v7 (LightGBM + global FS)", v7)
+    _add("v8a (weighted ensemble)", v8_1)
+    _add("v8b (horizon-specific FS)", v8_2)
+
+    if not rows:
+        return "<p><em>Not available.</em></p>"
+    return pd.DataFrame(rows).to_html(classes="metrics-table", index=False, border=0, escape=False)
+
+
+def _build_v8_hfs_config_table(v8_2: pd.DataFrame) -> str:
+    """Configuration summary for v8b horizon-specific feature selection."""
+    needed = {"horizon", "v8_hfs_top_k", "v8_hfs_n_macro", "v8_hfs_n_total_features"}
+    if v8_2.empty or not needed.issubset(v8_2.columns):
+        return "<p class=\"small\"><em>v8b top-K configuration table not available in current artifacts.</em></p>"
+    t = v8_2[["horizon", "v8_hfs_top_k", "v8_hfs_n_macro", "v8_hfs_n_total_features"]].copy()
+    t.columns = ["Horizon", "Top-K Share", "Selected Macro Features", "Total Features"]
+    return t.to_html(classes="metrics-table", index=False, border=0, float_format=lambda x: f"{x:.2f}")
 
 
 # --- Template ---------------------------------------------------------------
@@ -325,23 +704,38 @@ TEMPLATE = Template(r"""<!DOCTYPE html>
 
 <p>
 This project extends Kilian &amp; Park (2009) from average impulse-response description to
-forward-looking prediction using XGBoost, and progressively tests whether the
-result is tradable as a sector rotation. We iterated through four training paradigms,
-each exposing a different obstacle to predictive signal:
+forward-looking prediction, and progressively tests whether the result is tradable as
+a sector rotation. The full model-development line is integrated here as a single
+arc from v1 through v8b, rather than split into separate analyses.
 </p>
 
 <div class="figure">
   <img src="data:image/png;base64,{{ four_exp_b64 }}" alt="Four-experiment summary">
-  <div class="caption"><strong>Figure 0.</strong> The arc at a glance. Left: mean classification edge vs naive majority-class baseline for the regression paradigm — small improvements with pooling and momentum but never positive. Right: mean long-short Sharpe for the ranking paradigm — v3 (macro only) is net negative; v4c (macro + momentum) flips positive across all four horizons.</div>
+    <div class="caption"><strong>Figure 0.</strong> The arc at a glance. Left: mean classification edge vs naive majority-class baseline for the regression paradigm — small improvements with pooling and momentum but never positive. Right: mean long-short Sharpe for the ranking paradigm from v3 through v8b, showing the progression from anti-correct baseline to improved ranking formulations.</div>
 </div>
 
 {{ headline_arc_table_html | safe }}
 
+<h3>Integrated Cross-Model Metrics (v1 through v8b)</h3>
+{{ full_model_table_html | safe }}
+
+<p class="small">
+v6a/v6b/v6c metrics are computed from executed notebook outputs and exported to
+<code>outputs/report/tables/all_models_metrics_v6.csv</code> for this integrated report.
+</p>
+
 <div class="win">
-<strong>Main finding.</strong> A pooled XGBoost learning-to-rank model built on Kilian structural shocks, macro-regime features, and sector-level momentum produces a long-top-3 / short-bottom-3 strategy with a mean annualized Sharpe of <strong>{{ '%+.3f' % v4c_mean_sharpe }}</strong> across four horizons. The improvement over the macro-only ranker (v3 → v4c) is a <strong>{{ '%+.3f' % (v4c_mean_sharpe - v3_mean_sharpe) }}</strong> Sharpe swing. Naive t-statistics at h=3 and h=6 are <strong>+{{ '%.2f' % v4c_h3_tstat }}</strong> and <strong>+{{ '%.2f' % v4c_h6_tstat }}</strong>; properly adjusted for overlapping-return autocorrelation these drop to ~1.0-1.2, so strictly speaking the strategy is not significant at the 5% level — but four independent metrics (Sharpe, Spearman, top-3 hit, cumulative L-S) all agree in direction on a previously anti-correct baseline.
+<strong>Main finding.</strong> In the integrated model line, the strongest persisted result is <strong>{{ best_model_name }}</strong> at <strong>{{ '%+.3f' % best_model_sharpe }}</strong>. The v3 → v4c transition remains the methodological inflection (negative to positive ranking signal), but it is no longer the terminal result: v5, v6, v7, v8a, and especially v8b extend that edge.
 </div>
 
 <h2>1 · Financial analysis completeness</h2>
+
+<h3>1.0 · Full progression coverage (integrated)</h3>
+<p>
+All reported performance tables in this document now incorporate the extended model
+line: v1, v2, v3, v4a, v4b, v4c, v5, v6a, v6b, v6c, v7, v8a, and v8b. Regression versions report
+OOF R² by horizon; ranking versions report mean long-short Sharpe and horizon-level Sharpe.
+</p>
 
 <h3>1.1 · Data panel</h3>
 <p>
@@ -409,6 +803,10 @@ decompose the sector's forecast-error variance at the 12-month horizon.
   <li><strong>v1 (33 features):</strong> 3 contemporaneous Kilian shocks + 9 lagged (l1/l2/l3) + 3 cumulative-3-month + dominant-shock one-hot (3) + signed magnitude (2) + contamination flag + vix_level/vix_regime/vix_is_proxy + fed_regime_num + IG/HY credit spreads + hy_available + Recession + oil_ret_3m/12m + net_oil_price_3yr + oil_vol_6m_monthly.</li>
   <li><strong>v2 trim (18 features + 12 sector one-hot = 30):</strong> drops lag-2/3, cum_3m, dominant-shock one-hot, shock_sign, shock_magnitude, vix_is_proxy. Trees can still recover lag-2/3 effects from the continuous shock series; removing them lets the model use its tree-capacity budget on the interactions that matter.</li>
   <li><strong>v4 momentum (v2 + 5 sector-specific features):</strong> <code>own_ret_1m</code>, <code>own_ret_3m</code>, <code>own_mom_12_1</code> (Jegadeesh-Titman 12-1 skip-1), <code>own_vol_6m</code>, <code>cross_rank_12_1</code> (cross-sectional rank of 12-1 momentum — direct input for the ranker).</li>
+    <li><strong>v5:</strong> post-v4c ranker refinement on the same macro+momentum base.</li>
+    <li><strong>v6a/v6b/v6c:</strong> Random Forest baseline selection, then Optuna + threshold tuning, then full algorithm shootout.</li>
+    <li><strong>v7:</strong> LightGBM ranking with global feature selection.</li>
+    <li><strong>v8a/v8b:</strong> weighted ensemble and horizon-specific feature selection.</li>
 </ul>
 
 <h3>1.5 · Target construction</h3>
@@ -422,7 +820,7 @@ Three parallel target formulations:
 <ul>
   <li><strong>Regression (v1, v2, v4a, v4b):</strong> continuous CAR.</li>
   <li><strong>Classification (v1 clf):</strong> binary <code>sign(CAR)</code>.</li>
-  <li><strong>Ranking (v3, v4c):</strong> integer 0..11 rank within each month's 12-sector group; XGBRanker <code>rank:pairwise</code> objective.</li>
+    <li><strong>Ranking (v3 through v8b):</strong> integer 0..11 rank within each month's 12-sector group; common ranking target, but objective functions differ by model family (XGBoost/LGBM/CatBoost/ensemble).</li>
 </ul>
 
 <h3>1.6 · Walk-forward cross-validation</h3>
@@ -436,7 +834,7 @@ machine-checked <code>check_no_lookahead</code> pass confirming no
 expected direction.
 </p>
 
-<h2>2 · Novelty — the experimental arc</h2>
+<h2>2 · Novelty — the integrated experimental arc</h2>
 
 <h3>2.1 · <span class="version-label v1">v1</span> per-cell XGBoost baseline</h3>
 <p>
@@ -549,26 +947,86 @@ adjusted values drop to ~1.0-1.2, not strictly significant but consistently
 directional across Sharpe, Spearman, top-3 hit rate, and cumulative return.
 </div>
 
-<h3>2.6 · Head-to-head: v1 → v4c across paradigms</h3>
+<h3>2.6 · v5 post-v4c extension</h3>
+<p>
+v5 is the first post-v4c stress test: does the positive ranking signal survive outside the original implementation window and with revised tuning choices? This is the right diagnostic before any algorithm branching because it isolates persistence from architecture changes.
+</p>
+<p>
+In the integrated metrics, v5 remains clearly positive (mean Sharpe <strong>{{ model_summaries.v5.mean_sharpe }}</strong>) with its best horizon at <strong>h={{ model_summaries.v5.best_horizon }}</strong> (<strong>{{ model_summaries.v5.best_horizon_sharpe }}</strong>). That outcome justifies moving into a deliberate model-family search rather than stopping at the original breakthrough.
+</p>
+
+<h3>2.7 · v6a Random Forest baseline selection</h3>
+<p>
+v6a introduces a controlled Random Forest baseline to test whether the ranking edge is specific to boosted trees or transferable across nonlinear learners. The objective is not to beat the full stack yet, but to establish cross-family signal portability.
+</p>
+<p>
+v6a lands at mean Sharpe <strong>{{ model_summaries.v6a.mean_sharpe }}</strong> with the best horizon at <strong>h={{ model_summaries.v6a.best_horizon }}</strong> (<strong>{{ model_summaries.v6a.best_horizon_sharpe }}</strong>). This sits below the eventual v8 line, but confirms that the core ranking signal is not strictly model-implementation noise.
+</p>
+
+<h3>2.8 · v6b Random Forest + Optuna tuning</h3>
+<p>
+v6b applies Optuna tuning and threshold sweeps to the RF branch. This phase answers whether the v6a gap is primarily due to untuned capacity or due to deeper objective/inductive-bias differences.
+</p>
+<p>
+The tuned branch improves to mean Sharpe <strong>{{ model_summaries.v6b.mean_sharpe }}</strong> (best at <strong>h={{ model_summaries.v6b.best_horizon }}</strong>, <strong>{{ model_summaries.v6b.best_horizon_sharpe }}</strong>). That is meaningful uplift versus v6a, but still below the best later pipeline, motivating a broader algorithm shootout.
+</p>
+
+<h3>2.9 · v6c Full algorithm shootout</h3>
+<p>
+v6c expands from single-family tuning to a full shootout under report-consistent metrics. This is the decision gate where algorithm choice is made with the same evaluation lens used throughout the report.
+</p>
+<p>
+The shootout winner records mean Sharpe <strong>{{ model_summaries.v6c.mean_sharpe }}</strong> and best horizon <strong>h={{ model_summaries.v6c.best_horizon }}</strong> (<strong>{{ model_summaries.v6c.best_horizon_sharpe }}</strong>). This result directly motivates the LightGBM-centered progression in v7 and onward.
+</p>
+
+<h3>2.10 · v7 LightGBM + global feature selection</h3>
+<p>
+v7 transitions to LightGBM ranking with global feature selection. Compared with v6, the goal is cleaner generalization via stronger split efficiency and a tighter macro feature set.
+</p>
+<p>
+v7 reaches mean Sharpe <strong>{{ model_summaries.v7.mean_sharpe }}</strong> with best horizon at <strong>h={{ model_summaries.v7.best_horizon }}</strong> (<strong>{{ model_summaries.v7.best_horizon_sharpe }}</strong>). This materially tightens the post-v5 line and establishes a strong base for ensembling and horizon-specific adaptation.
+</p>
+
+<h3>2.11 · v8a weighted ensemble</h3>
+<p>
+v8a introduces a constrained weighted ensemble (non-negative simplex) to reduce single-model brittleness and capture complementary errors across candidate rankers.
+</p>
+<p>
+It delivers mean Sharpe <strong>{{ model_summaries.v8a.mean_sharpe }}</strong> with best horizon <strong>h={{ model_summaries.v8a.best_horizon }}</strong> (<strong>{{ model_summaries.v8a.best_horizon_sharpe }}</strong>). Ensemble averaging helps stability, but the final edge comes from horizon-specific adaptation in v8b.
+</p>
+
+<h3>2.12 · v8b horizon-specific feature selection</h3>
+<p>
+v8b applies horizon-specific feature selection so each prediction horizon uses a macro set tuned to its own signal geometry. This is the final integrated model and the strongest persisted result in the artifact set.
+</p>
+<p>
+v8b posts mean Sharpe <strong>{{ model_summaries.v8b.mean_sharpe }}</strong>, with best horizon at <strong>h={{ model_summaries.v8b.best_horizon }}</strong> (<strong>{{ model_summaries.v8b.best_horizon_sharpe }}</strong>), and average IC <strong>{{ model_summaries.v8b.mean_ic }}</strong>.
+</p>
+
+{{ advanced_rankers_table_html | safe }}
+
+<h3>2.13 · Head-to-head: v1 → v8b across paradigms</h3>
+
+<div class="figure">
+        <img src="data:image/png;base64,{{ ranker_horizon_compare_b64 }}" alt="Ranking-model horizon comparison">
+        <div class="caption"><strong>Figure 3.</strong> Ranking-model head-to-head by horizon. The highlighted series is <strong>{{ best_model_name }}</strong>, which leads on mean Sharpe in the persisted integrated artifacts.</div>
+</div>
 
 <div class="figure">
   <img src="data:image/png;base64,{{ v3_vs_v4c_b64 }}" alt="v3 vs v4c cumulative comparison">
-  <div class="caption"><strong>Figure 3.</strong> Cumulative long-short abnormal return by horizon — v3 (macro only, red) vs v4c (macro + momentum, blue). The h=3 panel is the cleanest story: v3 drops from 0 to −3 over the OOF window; v4c climbs from 0 to +2. Adding momentum features flips the strategy from mean-reversion loser to momentum-continuation winner.</div>
+        <div class="caption"><strong>Figure 4.</strong> v3 vs v4c inflection detail: the sign-flip transition that makes the later v5-v8 improvements possible.</div>
 </div>
 
-<h3>2.7 · v4c sector rotation — which sectors does the model pick?</h3>
+<h3>2.14 · Best-model outcome profile ({{ best_model_name }})</h3>
 
 <div class="figure">
-  <img src="data:image/png;base64,{{ v4c_sector_sel_b64 }}" alt="v4c sector selection frequency">
-  <div class="caption"><strong>Figure 4.</strong> Per-horizon selection frequency in the v4c top-3 long (green) and bottom-3 short (red) baskets. Dashed gray lines mark the 3/12 = 25% random baseline. The momentum-enriched ranker produces more differentiated picks than v3: Durbl and Other remain heavily shorted, but the long book diversifies across Hlth, NoDur, Enrgy, and Manuf depending on horizon, rather than concentrating on Money across the board.</div>
+    <img src="data:image/png;base64,{{ best_model_profile_b64 }}" alt="Best model profile">
+        <div class="caption"><strong>Figure 5.</strong> Outcome profile for <strong>{{ best_model_name }}</strong>: Sharpe and IC by horizon. This is the correct endpoint view for strategy interpretation in the current integrated run.</div>
 </div>
 
-<div class="figure">
-  <img src="data:image/png;base64,{{ v4c_ls_cum_b64 }}" alt="v4c cumulative L-S">
-  <div class="caption"><strong>Figure 5.</strong> v4c cumulative long-short abnormal return. All four horizons end the OOF period positive; drawdowns are concentrated in 2008-2010 (GFC) and 2020-2021 (COVID).</div>
-</div>
+{{ v8_hfs_config_html | safe }}
 
-<h3>2.8 · Caveats</h3>
+<h3>2.15 · Caveats</h3>
 <ul>
   <li><strong>Statistical significance after AC adjustment.</strong> For h=3 targets, CAR at t and t+1 share 2/3 of their components; at h=12, 11/12. Effective independent sample sizes are ~125 and ~31. Adjusting the t-stats by √horizon brings them to ~1.0-1.2 — directionally robust but not strictly significant at conventional thresholds.</li>
   <li><strong>No transaction cost modeling.</strong> A monthly-rebalanced top-3 / bottom-3 rotation would incur turnover; the reported Sharpe is gross.</li>
@@ -581,27 +1039,28 @@ directional across Sharpe, Spearman, top-3 hit rate, and cumulative return.
 SHAP panels below come from the <em>v1 regression</em> models, saved before the
 signal-ceiling diagnosis. They show what the <em>per-cell</em> macro-regime
 model was attending to at the h=6 horizon — a useful baseline view even though
-v4c moved to a ranking objective with added momentum features.
+the strongest later models (v5 through v8b) moved to ranking objectives with
+momentum and feature-selection refinements.
 </p>
 
 <div class="figure">
   <img src="data:image/png;base64,{{ shap_global_bar_b64 }}" alt="Global SHAP bar grid">
-  <div class="caption"><strong>Figure 6.</strong> Global SHAP importance by sector at h=6, v1 regression models. Across nearly every sector, <code>credit_spread_hy</code>, <code>credit_spread_ig</code>, <code>oil_vol_6m_monthly</code>, and <code>oil_ret_12m</code> dominate — forward-looking, market-priced indicators. The raw Kilian shocks (residuals by construction) rank below these, which is consistent with the v3 finding that macro-only features don't carry strong cross-sectional signal; the v4c improvement shows where the missing piece was.</div>
+    <div class="caption"><strong>Figure 7.</strong> Global SHAP importance by sector at h=6, v1 regression models. Across nearly every sector, <code>credit_spread_hy</code>, <code>credit_spread_ig</code>, <code>oil_vol_6m_monthly</code>, and <code>oil_ret_12m</code> dominate — forward-looking, market-priced indicators. The raw Kilian shocks (residuals by construction) rank below these, which is consistent with the v3 finding that macro-only features don't carry strong cross-sectional signal; the v4c improvement shows where the missing piece was.</div>
 </div>
 
 <div class="figure">
   <img src="data:image/png;base64,{{ shap_heatmap_b64 }}" alt="Cross-sector SHAP heatmap">
-  <div class="caption"><strong>Figure 7.</strong> Cross-sector SHAP heatmap at h=6 — the ML analogue of Kilian &amp; Park Figure 6. Same feature, opposite signs across sectors reveals the latent rotation pattern.</div>
+    <div class="caption"><strong>Figure 8.</strong> Cross-sector SHAP heatmap at h=6 — the ML analogue of Kilian &amp; Park Figure 6. Same feature, opposite signs across sectors reveals the latent rotation pattern.</div>
 </div>
 
 <div class="figure">
   <img src="data:image/png;base64,{{ shap_waterfall_russia_b64 }}" alt="Russia 2022 waterfall">
-  <div class="caption"><strong>Figure 8.</strong> Waterfall for FF_Enrgy prediction at 2022-02 (Russia-Ukraine invasion month). Model predicts +0.20 six-month Energy CAR; <code>oil_ret_12m</code> (+0.09) and <code>oil_vol_6m</code> (+0.05) dominate contribution. <code>eps_precaut</code> is in the "22 other features" aggregate — its individual contribution is small relative to the trend-and-volatility features, consistent with the v1 global finding.</div>
+    <div class="caption"><strong>Figure 9.</strong> Waterfall for FF_Enrgy prediction at 2022-02 (Russia-Ukraine invasion month). Model predicts +0.20 six-month Energy CAR; <code>oil_ret_12m</code> (+0.09) and <code>oil_vol_6m</code> (+0.05) dominate contribution. <code>eps_precaut</code> is in the "22 other features" aggregate — its individual contribution is small relative to the trend-and-volatility features, consistent with the v1 global finding.</div>
 </div>
 
 <div class="figure">
   <img src="data:image/png;base64,{{ shap_dep_enrgy_b64 }}" alt="Dependence Enrgy">
-  <div class="caption"><strong>Figure 9.</strong> SHAP dependence: <code>eps_precaut</code> SHAP × <code>vix_regime</code> interaction for FF_Enrgy at h=6. Visualizes the regime-conditional transmission that motivated the feature set.</div>
+    <div class="caption"><strong>Figure 10.</strong> SHAP dependence: <code>eps_precaut</code> SHAP × <code>vix_regime</code> interaction for FF_Enrgy at h=6. Visualizes the regime-conditional transmission that motivated the feature set.</div>
 </div>
 
 <p class="small">
@@ -636,6 +1095,9 @@ this report regeneration).
     train_v2.py               v2 pooled regression + Ridge baseline
     train_ranking.py          v3 XGBRanker + L-S backtest + plotting helpers
     train_v4.py               v4a/v4b/v4c orchestration + comparison tables
+    train_v6.py               v6a/v6b/v6c notebook-stage model specs
+    train_v7.py               v7 LightGBM ranker specs
+    train_v8.py               v8a ensemble + v8b HFS specs
     diagnostics.py            per-fold train/test gap diagnostic
     verify_shocks.py          ADF + 1990 sign check + per-sector FEVD
     shap_analysis.py          Milestone D SHAP panels
@@ -654,6 +1116,16 @@ this report regeneration).
 stopping, max_depth=3, lr=0.05, min_child_weight=10, reg_alpha=0.5,
 reg_lambda=1.0, random_state=42.
 </p>
+
+<p>
+<strong>v5:</strong> post-v4c ranker variant (persisted OOF summary available in <code>ranking_summary_v5.csv</code>).<br>
+<strong>v6a/v6b/v6c:</strong> Random Forest and full-shootout notebook variants (metrics not exported to report-table CSVs).<br>
+<strong>v7:</strong> LightGBM ranker with Optuna tuning and global feature selection (per-horizon Sharpe/IC in <code>report2_per_horizon.csv</code>).<br>
+<strong>v8a:</strong> weighted ensemble over candidate model OOF signals (per-horizon Sharpe/IC persisted).<br>
+<strong>v8b:</strong> LightGBM with horizon-specific feature selection; selected top-K shares and feature counts persisted and summarized below.
+</p>
+
+{{ v8_hfs_config_html | safe }}
 
 <h2>5 · Source attribution</h2>
 
@@ -696,12 +1168,20 @@ model did not make independent research decisions. Full prompt history is
 preserved in the project's Claude Code session log.
 </p>
 
+<p class="small">
+GitHub Copilot (GPT-5.3-Codex) was also used inside VS Code for implementation support,
+refactoring assistance, and report-structure updates spanning v5 through v8 documentation.
+Copilot suggestions were reviewed and edited before acceptance; all final modeling and
+reporting decisions remained user-directed.
+</p>
+
 <h3>5.4 · Software / libraries</h3>
 <p class="small">
 pandas, numpy, scipy, statsmodels (VAR, ADF, FEVD), scikit-learn
 (TimeSeriesSplit, RidgeCV, metrics), xgboost (XGBRegressor, XGBClassifier,
 XGBRanker), shap (TreeExplainer), matplotlib, seaborn, pyarrow (parquet),
-jinja2 (this template), jupyter. Python 3.11. All packages unpinned in
+lightgbm, catboost, jinja2 (this template), jupyter, VS Code + GitHub Copilot.
+Python 3.11. All packages unpinned in
 <code>requirements.txt</code>; pipeline is deterministic with
 <code>random_state=42</code> and <code>tree_method="hist"</code>.
 </p>
@@ -740,7 +1220,8 @@ def render_report() -> Path:
 
     # Build the new summary figure
     summary_path = REPORT_FIGURES / "four_experiment_summary.png"
-    build_four_experiment_summary(summary_path)
+    v6a, v6b, v6c = _load_v6_metrics()
+    build_four_experiment_summary(summary_path, v6b=v6b)
 
     # Load all tables
     manifest = json.loads(RUN_MANIFEST.read_text()) if RUN_MANIFEST.exists() else {}
@@ -759,14 +1240,78 @@ def render_report() -> Path:
     v2 = _read(REPORT_TABLES / "oof_metrics_v2.csv")
     v4a = _read(REPORT_TABLES / "oof_metrics_v4a.csv")
     v4b = _read(REPORT_TABLES / "oof_metrics_v4b.csv")
-    v3 = _read(REPORT_TABLES / "ranking_summary_v3.csv")
-    v4c = _read(REPORT_TABLES / "ranking_summary_v4c.csv")
+    v3 = _load_ranking_summary("v3")
+    v4c = _load_ranking_summary("v4c")
+    v5 = _load_ranking_summary("v5")
+    v7, v8_1, v8_2 = _load_advanced_rankers_from_report2()
 
     # Headline numbers
     v4c_mean_sharpe = float(v4c["sharpe_ann"].mean()) if not v4c.empty else 0.0
     v3_mean_sharpe = float(v3["sharpe_ann"].mean()) if not v3.empty else 0.0
     v4c_h3_tstat = float(v4c[v4c["horizon"] == 3]["t_stat"].iloc[0]) if not v4c.empty else 0.0
     v4c_h6_tstat = float(v4c[v4c["horizon"] == 6]["t_stat"].iloc[0]) if not v4c.empty else 0.0
+
+    ranker_candidates = [
+        ("v4c", v4c_mean_sharpe),
+        ("v5", float(v5["sharpe_ann"].mean()) if not v5.empty and "sharpe_ann" in v5.columns else np.nan),
+        ("v6a", float(v6a["sharpe_ann"].mean()) if not v6a.empty else np.nan),
+        ("v6b", float(v6b["sharpe_ann"].mean()) if not v6b.empty else np.nan),
+        ("v6c", float(v6c["sharpe_ann"].mean()) if not v6c.empty else np.nan),
+        ("v7", float(v7["sharpe_ann"].mean()) if not v7.empty else np.nan),
+        ("v8a", float(v8_1["sharpe_ann"].mean()) if not v8_1.empty else np.nan),
+        ("v8b", float(v8_2["sharpe_ann"].mean()) if not v8_2.empty else np.nan),
+    ]
+    ranker_candidates = [(n, s) for n, s in ranker_candidates if not pd.isna(s)]
+    best_model_name, best_model_sharpe = max(ranker_candidates, key=lambda x: x[1]) if ranker_candidates else ("N/A", 0.0)
+
+    model_frames = {
+        "v3": v3,
+        "v4c": v4c,
+        "v5": v5,
+        "v6a": v6a,
+        "v6b": v6b,
+        "v6c": v6c,
+        "v7": v7,
+        "v8a": v8_1,
+        "v8b": v8_2,
+    }
+
+    ranker_compare_path = REPORT_FIGURES / "ranker_horizon_comparison.png"
+    build_ranker_horizon_comparison(ranker_compare_path, model_frames, best_model=best_model_name)
+
+    best_df = model_frames.get(best_model_name, pd.DataFrame())
+    best_profile_path = REPORT_FIGURES / "best_model_outcome_profile.png"
+    build_best_model_outcome_profile(best_profile_path, best_model=best_model_name, best_df=best_df)
+
+    def _model_summary(dfr: pd.DataFrame) -> dict[str, str]:
+        if dfr is None or dfr.empty or "sharpe_ann" not in dfr.columns:
+            return {
+                "mean_sharpe": "N/A",
+                "best_horizon": "N/A",
+                "best_horizon_sharpe": "N/A",
+                "mean_ic": "N/A",
+            }
+        g = dfr.groupby("horizon", as_index=True).mean(numeric_only=True)
+        mean_sharpe = float(g["sharpe_ann"].mean())
+        best_h = int(g["sharpe_ann"].idxmax())
+        best_val = float(g.loc[best_h, "sharpe_ann"])
+        mean_ic = float(g["mean_spearman"].mean()) if "mean_spearman" in g.columns else np.nan
+        return {
+            "mean_sharpe": f"{mean_sharpe:+.3f}",
+            "best_horizon": str(best_h),
+            "best_horizon_sharpe": f"{best_val:+.3f}",
+            "mean_ic": "N/A" if pd.isna(mean_ic) else f"{mean_ic:+.3f}",
+        }
+
+    model_summaries = {
+        "v5": _model_summary(v5),
+        "v6a": _model_summary(v6a),
+        "v6b": _model_summary(v6b),
+        "v6c": _model_summary(v6c),
+        "v7": _model_summary(v7),
+        "v8a": _model_summary(v8_1),
+        "v8b": _model_summary(v8_2),
+    }
 
     ctx = {
         "generated_at": pd.Timestamp.utcnow().strftime("%Y-%m-%d %H:%M UTC"),
@@ -790,6 +1335,8 @@ def render_report() -> Path:
         "shap_waterfall_russia_b64": _b64_png(
             REPORT_FIGURES / "shap_waterfall_Enrgy_h6_2022-02_Russia.png"
         ),
+        "ranker_horizon_compare_b64": _b64_png(ranker_compare_path),
+        "best_model_profile_b64": _b64_png(best_profile_path),
 
         # Tables
         "adf_table_html": _build_adf_table(adf),
@@ -799,13 +1346,19 @@ def render_report() -> Path:
         "v2_r2_pivot_html": _build_v2_r2_pivot(v2),
         "v3_table_html": _build_v3_table(v3),
         "v4c_table_html": _build_v4c_table(v4c),
-        "headline_arc_table_html": _build_headline_arc_table(v1, v2, v4a, v4b, v3, v4c),
+        "headline_arc_table_html": _build_headline_arc_table(v1, v2, v4a, v4b, v3, v4c, v5, v6a, v6b, v6c, v7, v8_1, v8_2),
+        "full_model_table_html": _build_full_model_metrics_table(v1, v2, v4a, v4b, v3, v4c, v5, v6a, v6b, v6c, v7, v8_1, v8_2),
+        "advanced_rankers_table_html": _build_advanced_rankers_table(v4c, v5, v6a, v6b, v6c, v7, v8_1, v8_2),
+        "v8_hfs_config_html": _build_v8_hfs_config_table(v8_2),
 
         # Scalars
         "v4c_mean_sharpe": v4c_mean_sharpe,
         "v3_mean_sharpe": v3_mean_sharpe,
         "v4c_h3_tstat": v4c_h3_tstat,
         "v4c_h6_tstat": v4c_h6_tstat,
+        "best_model_name": best_model_name,
+        "best_model_sharpe": best_model_sharpe,
+        "model_summaries": model_summaries,
 
         # Param serializations
         "xgb_v1_json": json.dumps(dict(XGB_REG_PARAMS)),

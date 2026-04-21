@@ -1,0 +1,215 @@
+﻿Diagnose log at 2026-04-21T15:14:08Z
+
+AppPath: C:\Users\570015767\AppData\Local\Programs\Git\mingw64\bin\git-credential-manager.exe
+InstallDir: C:\Users\570015767\AppData\Local\Programs\Git\mingw64\bin\
+Version: 2.7.3+5fa7116896c82164996a609accd1c5ad90fe730a
+
+------------
+Diagnostic: Environment
+Skipped: False
+Success: True
+Exception: None
+Log:
+OSType: Windows
+OSVersion: 10.0 (build 19045)
+Reading environment variables... OK
+ Variables:
+SESSIONNAME=Console
+ProgramFiles(x86)=C:\Program Files (x86)
+MSYSTEM=MINGW64
+ProgramW6432=C:\Program Files
+PROCESSOR_IDENTIFIER=Intel64 Family 6 Model 170 Stepping 4, GenuineIntel
+TMP=C:\Users\570015~1\AppData\Local\Temp
+PROCESSOR_ARCHITECTURE=AMD64
+ComSpec=C:\Windows\system32\cmd.exe
+Path=C:/Users/570015767/AppData/Local/Programs/Git/mingw64/libexec/git-core;C:\Users\570015767\AppData\Local\Programs\Git\mingw64\bin;C:\Users\570015767\AppData\Local\Programs\Git\usr\bin;C:\Users\570015767\bin;c:\Users\570015767\AppData\Roaming\Code\User\globalStorage\github.copilot-chat\debugCommand;c:\Users\570015767\AppData\Roaming\Code\User\globalStorage\github.copilot-chat\copilotCli;C:\Users\570015767\AppData\Local\Programs\Microsoft VS Code;C:\Apps\Miniforge3\v3_13_10_x64\Local;C:\Apps\Miniforge3\v3_13_10_x64\Local\Library\mingw-w64\bin;C:\Apps\Miniforge3\v3_13_10_x64\Local\Library\usr\bin;C:\Apps\Miniforge3\v3_13_10_x64\Local\Library\bin;C:\Apps\Miniforge3\v3_13_10_x64\Local\Scripts;C:\Apps\Miniforge3\v3_13_10_x64\Local\bin;C:\Apps\Miniforge3\v3_13_10_x64\Local\condabin;C:\Apps\Miniforge3\v3_13_10_x64\Local;C:\Apps\Miniforge3\v3_13_10_x64\Local\Library\mingw-w64\bin;C:\Apps\Miniforge3\v3_13_10_x64\Local\Library\usr\bin;C:\Apps\Miniforge3\v3_13_10_x64\Local\Library\bin;C:\Apps\Miniforge3\v3_13_10_x64\Local\Scripts;C:\Apps\Miniforge3\v3_13_10_x64\Local\bin;C:\Windows;C:\Windows\system32;C:\Windows\system32\Wbem;C:\Apps\Miniforge3\v3_13_10_x64\Local;C:\Apps\Miniforge3\v3_13_10_x64\Local\Scripts;C:\Apps\Miniforge3\v3_13_10_x64\Local\condabin;C:\Program Files\dotnet\;C:\Users\570015767\.local\bin;C:\Users\570015767\AppData\Local\Microsoft\WindowsApps;C:\Users\570015767\AppData\Local\Programs\Microsoft VS Code\bin;C:\Users\570015767\AppData\Local\Programs\Git\cmd;c:\Users\570015767\.vscode\extensions\ms-python.debugpy-2025.18.0-win32-x64\bundled\scripts\noConfigScripts
+VSCODE_GIT_ASKPASS_MAIN=c:\Users\570015767\AppData\Roaming\Code\User\globalStorage\vscode.git\askpass\493597c785d4c5cb\askpass-main.js
+USERPROFILE=C:\Users\570015767
+VSCODE_GIT_IPC_HANDLE=\\.\pipe\vscode-git-de6a91c87c-sock
+PROCESSOR_REVISION=aa04
+PYTHONSTARTUP=c:\Users\570015767\AppData\Roaming\Code\User\workspaceStorage\8468fe51670e5dad921661dcebb65dfd\ms-python.python\pythonrc.py
+Image_Group=Engineering
+FPS_BROWSER_APP_PROFILE_STRING=Internet Explorer
+FPS_BROWSER_USER_PROFILE_STRING=Default
+LOGONSERVER=\\HFM3XBC4
+TEMP=C:\Users\570015~1\AppData\Local\Temp
+SYSTEMOS=W1064
+USERNAME=570015767
+SystemRoot=C:\Windows
+VSCODE_DEBUGPY_ADAPTER_ENDPOINTS=c:\Users\570015767\.vscode\extensions\ms-python.debugpy-2025.18.0-win32-x64\.noConfigDebugAdapterEndpoints\endpoint-212dbd5b228836cb.txt
+CHROME_CRASHPAD_PIPE_NAME=\\.\pipe\crashpad_15204_HPWLGUWPFBWMZGEF
+GIT_EXEC_PATH=C:/Users/570015767/AppData/Local/Programs/Git/mingw64/libexec/git-core
+PLINK_PROTOCOL=ssh
+USERDNSDOMAIN=AEROAD.DS.GEAEROSPACE.NET
+GIT_PAGER=cat
+NO_PROXY=127.0.0.1,localhost,.ge.com,github.build.ge.com
+OneDrive=C:\Users\570015767\OneDrive - GE Aerospace
+VSCODE_NONCE=a2589244-3422-42ea-93e9-7bf2e56ed6f1
+CommonProgramFiles(x86)=C:\Program Files (x86)\Common Files
+ZES_ENABLE_SYSMAN=1
+VSCODE_PREVENT_SHELL_HISTORY=1
+SHELLOPTS=igncr
+PYTHON_BASIC_REPL=1
+ProgramData=C:\ProgramData
+LANG=en_US.UTF-8
+GIT_ASKPASS=c:\Users\570015767\AppData\Roaming\Code\User\globalStorage\vscode.git\askpass\493597c785d4c5cb\askpass.sh
+HOMEPATH=\Users\570015767
+GROFF_TMAC_PATH=/usr/share/groff/tmac
+COMPUTERNAME=HFM3XBC4
+PYDEVD_DISABLE_FILE_VALIDATION=1
+VSCODE_INJECTION=1
+ALLUSERSPROFILE=C:\ProgramData
+CommonProgramW6432=C:\Program Files\Common Files
+OneDriveCommercial=C:\Users\570015767\OneDrive - GE Aerospace
+VSCODE_A11Y_MODE=0
+TERM=xterm-256color
+SSL_CERT_FILE=C:\Apps\Miniforge3\v3_13_10_x64\Local\Menu\ZScalerRootCA.pem
+GROFF_FONT_PATH=/usr/share/groff/font
+DriverData=C:\Windows\System32\Drivers\DriverData
+HOMEDRIVE=C:
+windir=C:\Windows
+GIT_TRACE2_PARENT_SID=903fede6-00e4-429d-9546-1118d830c65e
+SystemDrive=C:
+NUMBER_OF_PROCESSORS=22
+OS=Windows_NT
+GIT_MERGE_AUTOEDIT=no
+ProgramFiles=C:\Program Files
+PATHBACKUP=C:\Apps\Miniforge3\v3_13_10_x64\Local;C:\Apps\Miniforge3\v3_13_10_x64\Local\Library\mingw-w64\bin;C:\Apps\Miniforge3\v3_13_10_x64\Local\Library\usr\bin;C:\Apps\Miniforge3\v3_13_10_x64\Local\Library\bin;C:\Apps\Miniforge3\v3_13_10_x64\Local\Scripts;C:\Apps\Miniforge3\v3_13_10_x64\Local\bin;C:\Windows;C:\Windows\system32;C:\Windows\system32\Wbem
+VSCODE_STABLE=1
+GIT_EDITOR=:
+PATHEXT=.sh;.COM;.EXE;.BAT;.CMD;.VBS;.VBE;.JS;.JSE;.WSF;.WSH;.MSC;.tcl;.lnk;.CPL
+HOME=C:\Users\570015767
+PSModulePath=C:\Users\570015767\OneDrive - GE Aerospace\Documents\WindowsPowerShell\Modules;C:\Program Files\WindowsPowerShell\Modules;C:\Windows\system32\WindowsPowerShell\v1.0\Modules
+TMPDIR=C:\Users\570015~1\AppData\Local\Temp
+APPDATA=C:\Users\570015767\AppData\Roaming
+USERDOMAIN=AEROAD
+PROCESSOR_LEVEL=6
+LOCALAPPDATA=C:\Users\570015767\AppData\Local
+VSCODE_GIT_ASKPASS_NODE=C:\Users\570015767\AppData\Local\Programs\Microsoft VS Code\Code.exe
+BUNDLED_DEBUGPY_PATH=c:\Users\570015767\.vscode\extensions\ms-python.debugpy-2025.18.0-win32-x64\bundled\libs\debugpy
+TERM_PROGRAM_VERSION=1.114.0
+USERDOMAIN_ROAMINGPROFILE=AEROAD
+DLIB_NO_VF_DEFAULTS=1
+COLORTERM=truecolor
+DLIB_SILENCE=1
+PUBLIC=C:\Users\Public
+TERM_PROGRAM=vscode
+VSCODE_GIT_ASKPASS_EXTRA_ARGS=
+CommonProgramFiles=C:\Program Files\Common Files
+
+
+------------
+Diagnostic: File system
+Skipped: False
+Success: True
+Exception: None
+Log:
+Temporary directory is 'C:\Users\570015767\AppData\Local\Temp\'...
+Checking basic file I/O...
+Writing to temporary file 'C:\Users\570015767\AppData\Local\Temp\0e074434b460afa10e59051c'... OK
+Reading from temporary file 'C:\Users\570015767\AppData\Local\Temp\0e074434b460afa10e59051c'... OK
+Deleting temporary file 'C:\Users\570015767\AppData\Local\Temp\0e074434b460afa10e59051c'... OK
+Testing IFileSystem instance...
+UserHomePath: C:\Users\570015767
+UserDataDirectoryPath: C:\Users\570015767\.gcm
+GetCurrentDirectory(): C:\Users\570015767\OneDrive - GE Aerospace\Documents\Personal\fintech-project-1
+
+------------
+Diagnostic: Networking
+Skipped: False
+Success: True
+Exception: None
+Log:
+Checking networking and HTTP stack...
+Creating HTTP client... OK
+IsNetworkAvailable: True
+Sending HEAD request to http://example.com...Sending HEAD request to https://example.com... OK
+ OK
+Acquiring free TCP port... OK
+Testing local HTTP loopback connections...
+Creating new HTTP listener for http://localhost:60826/... OK
+Waiting for loopback connection... OK
+Writing response... OK
+Waiting for response data... OK
+Loopback connection data OK
+
+------------
+Diagnostic: Git
+Skipped: False
+Success: True
+Exception: None
+Log:
+Getting Git version... OK
+Git version is '2.53.0.windows.2'
+Locating current repository...Git repository at 'C:/Users/570015767/OneDrive - GE Aerospace/Documents/Personal/fintech-project-1/.git'
+ OK
+Listing all Git configuration... OK
+Git configuration:
+file:C:/Users/570015767/AppData/Local/Programs/Git/etc/gitconfig	diff.astextplain.textconv=astextplain
+file:C:/Users/570015767/AppData/Local/Programs/Git/etc/gitconfig	filter.lfs.clean=git-lfs clean -- %f
+file:C:/Users/570015767/AppData/Local/Programs/Git/etc/gitconfig	filter.lfs.smudge=git-lfs smudge -- %f
+file:C:/Users/570015767/AppData/Local/Programs/Git/etc/gitconfig	filter.lfs.process=git-lfs filter-process
+file:C:/Users/570015767/AppData/Local/Programs/Git/etc/gitconfig	filter.lfs.required=true
+file:C:/Users/570015767/AppData/Local/Programs/Git/etc/gitconfig	http.sslbackend=schannel
+file:C:/Users/570015767/AppData/Local/Programs/Git/etc/gitconfig	core.autocrlf=true
+file:C:/Users/570015767/AppData/Local/Programs/Git/etc/gitconfig	core.fscache=true
+file:C:/Users/570015767/AppData/Local/Programs/Git/etc/gitconfig	core.symlinks=false
+file:C:/Users/570015767/AppData/Local/Programs/Git/etc/gitconfig	pull.rebase=false
+file:C:/Users/570015767/AppData/Local/Programs/Git/etc/gitconfig	credential.helper=manager
+file:C:/Users/570015767/AppData/Local/Programs/Git/etc/gitconfig	credential.https://dev.azure.com.usehttppath=true
+file:C:/Users/570015767/AppData/Local/Programs/Git/etc/gitconfig	init.defaultbranch=master
+file:C:/Users/570015767/.gitconfig	filter.lfs.clean=git-lfs clean -- %f
+file:C:/Users/570015767/.gitconfig	filter.lfs.smudge=git-lfs smudge -- %f
+file:C:/Users/570015767/.gitconfig	filter.lfs.process=git-lfs filter-process
+file:C:/Users/570015767/.gitconfig	filter.lfs.required=true
+file:C:/Users/570015767/.gitconfig	credential.helper=
+file:C:/Users/570015767/.gitconfig	credential.helper=C:/Users/570015767/AppData/Local/Programs/Git/mingw64/bin/git-credential-manager.exe
+file:.git/config	core.repositoryformatversion=0
+file:.git/config	core.filemode=false
+file:.git/config	core.bare=false
+file:.git/config	core.logallrefupdates=true
+file:.git/config	core.symlinks=false
+file:.git/config	core.ignorecase=true
+file:.git/config	remote.origin.url=https://catma12@github.com/catma12/fintech-project-1.git
+file:.git/config	remote.origin.fetch=+refs/heads/*:refs/remotes/origin/*
+file:.git/config	branch.main.remote=origin
+file:.git/config	branch.main.merge=refs/heads/main
+file:.git/config	branch.main.vscode-merge-base=origin/main
+file:.git/config	credential.https://github.com.username=catma12
+
+
+------------
+Diagnostic: Credential storage
+Skipped: False
+Success: True
+Exception: None
+Log:
+ICredentialStore instance is of type: CredentialStore
+Writing test credential... OK
+Reading test credential... OK
+Deleting test credential... OK
+
+------------
+Diagnostic: Microsoft authentication (AAD/MSA)
+Skipped: False
+Success: True
+Exception: None
+Log:
+Broker is not enabled.
+Flow type is: Auto
+Gathering MSAL token cache data... OK
+CacheDirectory: C:\Users\570015767\AppData\Local\.IdentityService
+CacheFileName: msal.cache
+CacheFilePath: C:\Users\570015767\AppData\Local\.IdentityService\msal.cache
+Creating cache helper... OK
+Verifying MSAL token cache persistence... OK
+
+------------
+Diagnostic: GitHub API
+Skipped: False
+Success: True
+Exception: None
+Log:
+Using 'https://github.com/' as API target.
+Querying '/meta' endpoint... OK
+

@@ -15,8 +15,8 @@ PRIMARY PROGRESSION (original report):
 
 ADVANCED MODELS (notebook analysis):
   - v7: LightGBM ranker with global feature selection (0.232 Sharpe)
-  - v8-1: Weighted ensemble (0.229 Sharpe)
-  - v8-2: LightGBM horizon-specific feature selection (0.277 Sharpe) **BEST**
+  - v8a: Weighted ensemble (0.229 Sharpe)
+  - v8b: LightGBM horizon-specific feature selection (0.277 Sharpe) **BEST**
 
 The report.py base content is preserved; new sections are injected before the
 final HTML close tag.
@@ -68,7 +68,7 @@ from report import (
 # ─────────────────────────────────────────────────────────────────────
 
 def load_all_model_metrics() -> dict:
-    """Load metrics for all 10 available models (v1-v5, v7, v8-1, v8-2)."""
+    """Load metrics for all 10 available models (v1-v5, v7, v8a, v8b)."""
     metrics = {}
     
     # v1-v5 Regression models (v1, v2, v4a, v4b)
@@ -108,7 +108,7 @@ def load_all_model_metrics() -> dict:
             except Exception as e:
                 print(f"  ⚠ Error loading {model}: {e}")
     
-    # v7, v8-1, v8-2 from report2_per_horizon.csv
+    # v7, v8a, v8b from report2_per_horizon.csv
     report2_path = REPORT_TABLES / "report2_per_horizon.csv"
     if report2_path.exists():
         try:
@@ -122,21 +122,21 @@ def load_all_model_metrics() -> dict:
                 v7_df["type"] = "ranking"
                 metrics["v7"] = v7_df
             
-            # v8-1 (weighted ensemble)
+            # v8a (weighted ensemble)
             if "v8_weighted_sharpe" in df_report2.columns:
                 v8_1_df = df_report2[["horizon", "v8_weighted_sharpe", "v8_weighted_ic"]].copy()
                 v8_1_df.columns = ["horizon", "sharpe_ann", "mean_spearman"]
-                v8_1_df["model"] = "v8-1"
+                v8_1_df["model"] = "v8a"
                 v8_1_df["type"] = "ranking"
-                metrics["v8-1"] = v8_1_df
+                metrics["v8a"] = v8_1_df
             
-            # v8-2 (horizon-specific FS - BEST)
+            # v8b (horizon-specific FS - BEST)
             if "v8_hfs_sharpe" in df_report2.columns:
                 v8_2_df = df_report2[["horizon", "v8_hfs_sharpe", "v8_hfs_ic"]].copy()
                 v8_2_df.columns = ["horizon", "sharpe_ann", "mean_spearman"]
-                v8_2_df["model"] = "v8-2"
+                v8_2_df["model"] = "v8b"
                 v8_2_df["type"] = "ranking"
-                metrics["v8-2"] = v8_2_df
+                metrics["v8b"] = v8_2_df
         except Exception as e:
             print(f"  ⚠ Error loading advanced models from report2: {e}")
     
@@ -149,7 +149,7 @@ def build_all_models_comparison_table(metrics: dict) -> str:
         return "<p><em>No metrics available.</em></p>"
     
     rows = []
-    model_order = ["v1", "v2", "v3", "v4a", "v4b", "v4c", "v5", "v7", "v8-1", "v8-2"]
+    model_order = ["v1", "v2", "v3", "v4a", "v4b", "v4c", "v5", "v7", "v8a", "v8b"]
     
     for model in model_order:
         if model not in metrics:
@@ -170,7 +170,7 @@ def build_all_models_comparison_table(metrics: dict) -> str:
             h12 = f"{h12_val:+.3f}" if not np.isnan(h12_val) else "—"
             metric = f"{mean_sharpe:+.3f}" if not np.isnan(mean_sharpe) else "—"
             metric_name = "Avg Sharpe"
-            badge = "[BEST] BEST" if model == "v8-2" else ("[STAR] Winner" if model == "v4c" else "")
+            badge = "[BEST] BEST" if model == "v8b" else ("[STAR] Winner" if model == "v4c" else "")
         else:
             mean_r2 = float(df["r2"].mean()) if "r2" in df.columns else np.nan
             h1_val = df[df['horizon']==1]['r2'].iloc[0] if "r2" in df.columns and len(df[df["horizon"]==1]) > 0 else np.nan
@@ -202,7 +202,7 @@ def build_all_models_comparison_table(metrics: dict) -> str:
 def build_individual_model_tables(metrics: dict) -> dict:
     """Build individual HTML tables for each model."""
     tables = {}
-    model_order = ["v1", "v2", "v3", "v4a", "v4b", "v4c", "v5", "v7", "v8-1", "v8-2"]
+    model_order = ["v1", "v2", "v3", "v4a", "v4b", "v4c", "v5", "v7", "v8a", "v8b"]
     
     for model in model_order:
         if model not in metrics:
@@ -248,13 +248,13 @@ now includes <strong>complete analysis of all 10 production & experimental model
 in the codebase, including advanced post-publication models that outperform the original winner.
 </p>
 
-<h3>7.1 · The Full Model Lineup: v1 through v8-2</h3>
+<h3>7.1 · The Full Model Lineup: v1 through v8b</h3>
 
 {{ all_models_comparison_table | safe }}
 
 <div class="win">
-<strong>[BEST] New Champion: v8-2</strong><br>
-v8-2 LightGBM with horizon-specific feature selection delivers <strong>0.277 Sharpe</strong> 
+<strong>[BEST] New Champion: v8b</strong><br>
+v8b LightGBM with horizon-specific feature selection delivers <strong>0.277 Sharpe</strong> 
 ({{ v8_2_vs_v4c_pct }}% improvement over v4c), with stronger per-horizon consistency than v4c.
 This represents the state-of-the-art result in this research path.
 </div>
@@ -319,13 +319,13 @@ The 10-model analysis reveals distinct phases in the research arc:
     </tr>
     <tr>
       <td><strong>Phase 7: Ensemble & Tuning</strong></td>
-      <td>v8-1</td>
+      <td>v8a</td>
       <td>Weighted ensemble across diverse models</td>
       <td>{{ v8_1_sharpe }}</td>
     </tr>
     <tr style="background: #fff3e0;">
       <td><strong>Phase 8: SOTA Feature Engineering</strong></td>
-      <td>v8-2 [BEST]</td>
+      <td>v8b [BEST]</td>
       <td>[OK] Horizon-specific feature selection wins</td>
       <td><strong>{{ v8_2_sharpe }}</strong></td>
     </tr>
@@ -384,14 +384,14 @@ Sharpe improvement: {{ v7_vs_v4c_pct }}% over v4c (mean {{ v7_sharpe }}).
 </p>
 {{ v7_detailed_table | safe }}
 
-<h4>v8-1 · Weighted Ensemble</h4>
+<h4>v8a · Weighted Ensemble</h4>
 <p>
 Simplex-optimized blend of LR, RF, LightGBM, and CatBoost OOF signals.
 Mean Sharpe {{ v8_1_sharpe }} ({{ v8_1_vs_v4c_pct }}% over v4c).
 </p>
 {{ v8_1_detailed_table | safe }}
 
-<h4>v8-2 · LightGBM Horizon-Specific Feature Selection [BEST] (NEW SOTA)</h4>
+<h4>v8b · LightGBM Horizon-Specific Feature Selection [BEST] (NEW SOTA)</h4>
 <p>
 <strong>Best-in-class result:</strong> LightGBM ranker with horizon-specific macro feature engineering.
 Each horizon (h=1, 3, 6, 12) uses independently optimized feature set.
@@ -407,24 +407,24 @@ At h=12, target AC=0.92 implies ~31 independent observations. Adjusting by √(h
 t-stats to ~1.0–1.2 for most horizons. However, the consistency across four independent
 metrics (Sharpe, IC, top-3 hit rate, cumulative return) and across multiple algorithms 
 (XGBoost, LightGBM, Ridge, RF, LogReg) provides <strong>cross-metric and cross-model validation</strong> 
-of the positive signal in v4c, v5, v7, v8-1, and v8-2.
+of the positive signal in v4c, v5, v7, v8a, and v8b.
 </p>
 
 <p>
-The +67% improvement from v4c to v8-2 is likely attributable to:
+The +67% improvement from v4c to v8b is likely attributable to:
 </p>
 <ul>
   <li><strong>Algorithm superiority:</strong> LightGBM's histogram-based learning more stable than XGBoost for this problem.</li>
   <li><strong>Feature engineering:</strong> Horizon-specific selection captures regime-conditional relationships.</li>
   <li><strong>Hyperparameter tuning:</strong> Optuna-driven optimization converges to better local optima.</li>
-  <li><strong>Ensemble effects:</strong> v8-1 backbone provides robustness; v8-2 adds orthogonal feature signal.</li>
+  <li><strong>Ensemble effects:</strong> v8a backbone provides robustness; v8b adds orthogonal feature signal.</li>
 </ul>
 
 <h3>7.5 · Deployment Recommendations</h3>
 
 <div class="key-finding">
-<strong>Immediate (Next 30 days):</strong> Backtest v8-2 on 2026 data to validate forward generalization.
-If confirmed, deploy v8-2 as production baseline, with v4c as fallback.
+<strong>Immediate (Next 30 days):</strong> Backtest v8b on 2026 data to validate forward generalization.
+If confirmed, deploy v8b as production baseline, with v4c as fallback.
 
 <strong>Short-term (3 months):</strong> Monitor live signal quality. Track monthly IC and Sharpe vs. model predictions.
 Alert if IC &lt; 0.02 or Sharpe &lt; 0.20 (indicating regime drift).
@@ -471,9 +471,9 @@ def render_enhanced_report() -> Path:
         return f"{metrics[model_key]['sharpe_ann'].mean():+.3f}"
     
     v4c_sharpe_val = float(metrics['v4c']['sharpe_ann'].mean()) if "v4c" in metrics else 0
-    v8_2_sharpe_val = float(metrics['v8-2']['sharpe_ann'].mean()) if "v8-2" in metrics else 0
+    v8_2_sharpe_val = float(metrics['v8b']['sharpe_ann'].mean()) if "v8b" in metrics else 0
     v7_sharpe_val = float(metrics['v7']['sharpe_ann'].mean()) if "v7" in metrics else 0
-    v8_1_sharpe_val = float(metrics['v8-1']['sharpe_ann'].mean()) if "v8-1" in metrics else 0
+    v8_1_sharpe_val = float(metrics['v8a']['sharpe_ann'].mean()) if "v8a" in metrics else 0
     v5_sharpe_val = float(metrics['v5']['sharpe_ann'].mean()) if "v5" in metrics else 0
     
     # Calculate percentage improvements
@@ -491,8 +491,8 @@ def render_enhanced_report() -> Path:
         "v4c_detailed_table": detail_tables.get("v4c", "<p><em>No data.</em></p>"),
         "v5_detailed_table": detail_tables.get("v5", "<p><em>No data.</em></p>"),
         "v7_detailed_table": detail_tables.get("v7", "<p><em>No data.</em></p>"),
-        "v8_1_detailed_table": detail_tables.get("v8-1", "<p><em>No data.</em></p>"),
-        "v8_2_detailed_table": detail_tables.get("v8-2", "<p><em>No data.</em></p>"),
+        "v8_1_detailed_table": detail_tables.get("v8a", "<p><em>No data.</em></p>"),
+        "v8_2_detailed_table": detail_tables.get("v8b", "<p><em>No data.</em></p>"),
         "v1_sharpe": "N/A (regression)",
         "v2_sharpe": "N/A (regression)",
         "v3_sharpe": get_mean_sharpe("v3"),
@@ -500,8 +500,8 @@ def render_enhanced_report() -> Path:
         "v4c_sharpe": get_mean_sharpe("v4c"),
         "v5_sharpe": get_mean_sharpe("v5"),
         "v7_sharpe": get_mean_sharpe("v7"),
-        "v8_1_sharpe": get_mean_sharpe("v8-1"),
-        "v8_2_sharpe": get_mean_sharpe("v8-2"),
+        "v8_1_sharpe": get_mean_sharpe("v8a"),
+        "v8_2_sharpe": get_mean_sharpe("v8b"),
         "v8_2_vs_v4c_pct": f"{v8_2_vs_v4c_pct:+.0f}",
         "v7_vs_v4c_pct": f"{v7_vs_v4c_pct:+.0f}",
         "v8_1_vs_v4c_pct": f"{v8_1_vs_v4c_pct:+.0f}",
@@ -530,8 +530,8 @@ def main() -> None:
     print("\n" + "=" * 70)
     print("SUCCESS: Enhanced report generated!")
     print(f"  Original report.py + 10-Model Extension: {out.name}")
-    print("  Includes: v1-v5 (progression), v7, v8-1, v8-2 (advanced)")
-    print("  [BEST] New SOTA Champion: v8-2 (0.277 Sharpe, +67% vs v4c)")
+    print("  Includes: v1-v5 (progression), v7, v8a, v8b (advanced)")
+    print("  [BEST] New SOTA Champion: v8b (0.277 Sharpe, +67% vs v4c)")
     print("=" * 70 + "\n")
 
 
@@ -632,12 +632,12 @@ def build_individual_model_tables(metrics: dict) -> dict:
 
 ENHANCED_SECTIONS = Template(r"""
 <hr>
-<h2>7 · Model Evolution: v1 through v8-2</h2>
+<h2>7 · Model Evolution: v1 through v8b</h2>
 
 <p>
 This section continues the same research timeline documented above. Instead of stopping at v4c,
-it extends the <strong>single development arc</strong> through v5, v7, v8-1, and v8-2,
-so the full sequence is evaluated as one progression: v1 -> v2 -> v3 -> v4a/v4b -> v4c -> v5 -> v7 -> v8-1 -> v8-2.
+it extends the <strong>single development arc</strong> through v5, v7, v8a, and v8b,
+so the full sequence is evaluated as one progression: v1 -> v2 -> v3 -> v4a/v4b -> v4c -> v5 -> v7 -> v8a -> v8b.
 </p>
 
 <h3>7.1 · Unified Performance Timeline</h3>
@@ -650,7 +650,7 @@ so the full sequence is evaluated as one progression: v1 -> v2 -> v3 -> v4a/v4b 
 <ul>
   <li><strong>v1 to v4b (problem diagnosis):</strong> Regression variants remain structurally weak on this target despite pooling and momentum additions.</li>
   <li><strong>v4c to v5 (core signal established):</strong> Ranking plus momentum turns the process positive and remains stable out of sample.</li>
-  <li><strong>v7 to v8-2 (optimization stage):</strong> LightGBM and feature-selection refinements improve Sharpe beyond v4c, culminating in v8-2.</li>
+  <li><strong>v7 to v8b (optimization stage):</strong> LightGBM and feature-selection refinements improve Sharpe beyond v4c, culminating in v8b.</li>
 </ul>
 
 <h3>7.2 · Individual Model Details</h3>
@@ -704,14 +704,14 @@ with global feature selection and stronger cross-horizon Sharpe.
 </p>
 {{ v7_detailed_table | safe }}
 
-<h4>v8-1 · Weighted Ensemble</h4>
+<h4>v8a · Weighted Ensemble</h4>
 <p>
 Combines multiple candidate models through non-negative weighting; improves stability,
 but does not exceed the best horizon-specific configuration.
 </p>
 {{ v8_1_detailed_table | safe }}
 
-<h4>v8-2 · LightGBM with Horizon-Specific Feature Selection (Current Best)</h4>
+<h4>v8b · LightGBM with Horizon-Specific Feature Selection (Current Best)</h4>
 <p>
 Applies horizon-by-horizon feature selection to align predictors with horizon-specific dynamics.
 This is the strongest model in the full v1 through v8 progression.
@@ -778,13 +778,13 @@ The full arc reveals a clear narrative from failed baselines to optimized rankin
     </tr>
     <tr>
       <td><strong>Phase 7: Ensemble Testing</strong></td>
-      <td>v8-1</td>
+      <td>v8a</td>
       <td>Weighted ensemble benchmark; Sharpe {{ v8_1_sharpe }}</td>
       <td>Competitive</td>
     </tr>
     <tr>
       <td><strong>Phase 8: Horizon-Specific FS</strong></td>
-      <td>v8-2</td>
+      <td>v8b</td>
       <td>Horizon-specific feature selection; Sharpe {{ v8_2_sharpe }}</td>
       <td>Best overall</td>
     </tr>
@@ -805,13 +805,13 @@ same direction on v4c and v5, providing <strong>cross-metric validation</strong>
 
 <div class="key-finding">
 <strong>Production Deployment:</strong> Treat the sequence as one continuous model line. v4c remains the
-published milestone, but v8-2 is the current best performer in the same research lineage.
-Deploy v8-2 under controlled monitoring, with v4c as fallback baseline.
+published milestone, but v8b is the current best performer in the same research lineage.
+Deploy v8b under controlled monitoring, with v4c as fallback baseline.
 
 <strong>Next-Gen Research:</strong> Explore orthogonal signals (supply-chain, NLP sentiment, alternative data)
 to diversify beyond macro+momentum paradigm. Target Sharpe > 0.25 via signal diversity, not hyperparameter tuning.
 
-<strong>Operational Monitoring:</strong> Track monthly IC and Sharpe vs. both v4c and v8-2. Alert if IC drops below 0.02
+<strong>Operational Monitoring:</strong> Track monthly IC and Sharpe vs. both v4c and v8b. Alert if IC drops below 0.02
 or Sharpe below 0.12 (indicating regime drift or data quality degradation).
 </div>
 
@@ -848,8 +848,8 @@ def render_enhanced_report() -> Path:
     v4c_sharpe = f"{metrics['v4c']['sharpe_ann'].mean():+.3f}" if "v4c" in metrics and "sharpe_ann" in metrics["v4c"].columns else "N/A"
     v5_sharpe = f"{metrics['v5']['sharpe_ann'].mean():+.3f}" if "v5" in metrics and "sharpe_ann" in metrics["v5"].columns else "N/A"
     v7_sharpe = f"{metrics['v7']['sharpe_ann'].mean():+.3f}" if "v7" in metrics and "sharpe_ann" in metrics["v7"].columns else "N/A"
-    v8_1_sharpe = f"{metrics['v8-1']['sharpe_ann'].mean():+.3f}" if "v8-1" in metrics and "sharpe_ann" in metrics["v8-1"].columns else "N/A"
-    v8_2_sharpe = f"{metrics['v8-2']['sharpe_ann'].mean():+.3f}" if "v8-2" in metrics and "sharpe_ann" in metrics["v8-2"].columns else "N/A"
+    v8_1_sharpe = f"{metrics['v8a']['sharpe_ann'].mean():+.3f}" if "v8a" in metrics and "sharpe_ann" in metrics["v8a"].columns else "N/A"
+    v8_2_sharpe = f"{metrics['v8b']['sharpe_ann'].mean():+.3f}" if "v8b" in metrics and "sharpe_ann" in metrics["v8b"].columns else "N/A"
     
     ctx_enhance = {
         "all_models_comparison_table": comp_table,
@@ -861,8 +861,8 @@ def render_enhanced_report() -> Path:
         "v4c_detailed_table": detail_tables.get("v4c", "<p><em>No data.</em></p>"),
         "v5_detailed_table": detail_tables.get("v5", "<p><em>No data.</em></p>"),
         "v7_detailed_table": detail_tables.get("v7", "<p><em>No data.</em></p>"),
-        "v8_1_detailed_table": detail_tables.get("v8-1", "<p><em>No data.</em></p>"),
-        "v8_2_detailed_table": detail_tables.get("v8-2", "<p><em>No data.</em></p>"),
+        "v8_1_detailed_table": detail_tables.get("v8a", "<p><em>No data.</em></p>"),
+        "v8_2_detailed_table": detail_tables.get("v8b", "<p><em>No data.</em></p>"),
         "v4c_sharpe": v4c_sharpe,
         "v5_sharpe": v5_sharpe,
         "v7_sharpe": v7_sharpe,
@@ -900,3 +900,4 @@ def main() -> None:
 if __name__ == "__main__":
     import numpy as np
     main()
+

@@ -1,0 +1,12 @@
+﻿git : fatal: User cancelled dialog.
+At line:1 char:127
++ ... t-1"; $env:GIT_TERMINAL_PROMPT='0'; git push origin main 2>&1 | Out-F ...
++                                         ~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (fatal: User cancelled dialog.:Str 
+   ing) [], RemoteException
+    + FullyQualifiedErrorId : NativeCommandError
+ 
+remote: Invalid username or token. Password authentication is not supported 
+for Git operations.
+fatal: Authentication failed for 
+'https://github.com/catma12/fintech-project-1.git/'

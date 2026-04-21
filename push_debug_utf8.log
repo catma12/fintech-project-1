@@ -1,0 +1,134 @@
+﻿git.exe : 10:54:04.375404 exec-cmd.c:266          trace: resolved executable 
+dir: C:/Users/570015767/AppData/Local/Programs/Git/mingw64/bin
+At line:1 char:174
++ ... v:GIT_CURL_VERBOSE='1'; & git push origin HEAD:main *> push_debug.log
++                             ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (10:54:04.375404...Git/mingw64/bin 
+   :String) [], RemoteException
+    + FullyQualifiedErrorId : NativeCommandError
+ 
+10:54:04.422024 git.c:502               trace: built-in: git push origin 
+HEAD:main
+10:54:04.431033 run-command.c:674       trace: run_command: GIT_DIR=.git git 
+remote-https origin https://github.com/catma12/fintech-project-1.git
+10:54:04.431033 run-command.c:935       trace: start_command: git remote-https 
+origin https://github.com/catma12/fintech-project-1.git
+10:54:04.476024 exec-cmd.c:266          trace: resolved executable dir: 
+C:/Users/570015767/AppData/Local/Programs/Git/mingw64/libexec/git-core
+10:54:04.487545 git.c:809               trace: exec: git-remote-https origin 
+https://github.com/catma12/fintech-project-1.git
+10:54:04.487545 run-command.c:674       trace: run_command: git-remote-https 
+origin https://github.com/catma12/fintech-project-1.git
+10:54:04.487545 run-command.c:935       trace: start_command: git-remote-https 
+origin https://github.com/catma12/fintech-project-1.git
+10:54:04.533381 exec-cmd.c:266          trace: resolved executable dir: 
+C:/Users/570015767/AppData/Local/Programs/Git/mingw64/libexec/git-core
+10:54:04.571435 http.c:930              == Info: Uses proxy env variable 
+no_proxy == '127.0.0.1,localhost,.ge.com,github.build.ge.com'
+10:54:04.571435 http.c:930              == Info: Could not find host 
+github.com in the .netrc file; using defaults
+10:54:04.601109 http.c:930              == Info: Host github.com:443 was 
+resolved.
+10:54:04.601109 http.c:930              == Info: IPv6: (none)
+10:54:04.601109 http.c:930              == Info: IPv4: 140.82.114.4
+10:54:04.601109 http.c:930              == Info:   Trying 140.82.114.4:443...
+10:54:04.602105 http.c:930              == Info: schannel: disabled automatic 
+use of client certificate
+10:54:04.604106 http.c:930              == Info: ALPN: curl offers http/1.1
+10:54:04.732214 http.c:930              == Info: ALPN: server did not agree on 
+a protocol. Uses default.
+10:54:04.732214 http.c:930              == Info: Established connection to 
+github.com (140.82.114.4 port 443) from 10.29.238.206 port 59571 
+10:54:04.732214 http.c:930              == Info: using HTTP/1.x
+10:54:04.732214 http.c:877              => Send header, 0000000207 bytes 
+(0x000000cf)
+10:54:04.732214 http.c:889              => Send header: GET 
+/catma12/fintech-project-1.git/info/refs?service=git-receive-pack HTTP/1.1
+10:54:04.732214 http.c:889              => Send header: Host: github.com
+10:54:04.732214 http.c:889              => Send header: User-Agent: 
+git/2.53.0.windows.2
+10:54:04.732214 http.c:889              => Send header: Accept: */*
+10:54:04.732214 http.c:889              => Send header: Accept-Encoding: 
+deflate, gzip, br, zstd
+10:54:04.732214 http.c:889              => Send header: Pragma: no-cache
+10:54:04.732214 http.c:889              => Send header:
+10:54:04.732214 http.c:930              == Info: Request completely sent off
+10:54:04.762215 http.c:877              <= Recv header, 0000000027 bytes 
+(0x0000001b)
+10:54:04.762215 http.c:889              <= Recv header: HTTP/1.1 401 
+Unauthorized
+10:54:04.762215 http.c:877              <= Recv header, 0000000026 bytes 
+(0x0000001a)
+10:54:04.762215 http.c:889              <= Recv header: Server: 
+GitHub-Babel/3.0
+10:54:04.762215 http.c:877              <= Recv header, 0000000054 bytes 
+(0x00000036)
+10:54:04.762215 http.c:889              <= Recv header: 
+Content-Security-Policy: default-src 'none'; sandbox
+10:54:04.762215 http.c:877              <= Recv header, 0000000041 bytes 
+(0x00000029)
+10:54:04.762215 http.c:889              <= Recv header: Content-Type: 
+text/plain; charset=UTF-8
+10:54:04.762215 http.c:877              <= Recv header, 0000000040 bytes 
+(0x00000028)
+10:54:04.762215 http.c:889              <= Recv header: www-authenticate: 
+Basic realm="GitHub"
+10:54:04.762215 http.c:877              <= Recv header, 0000000020 bytes 
+(0x00000014)
+10:54:04.762215 http.c:889              <= Recv header: Content-Length: 26
+10:54:04.762215 http.c:877              <= Recv header, 0000000037 bytes 
+(0x00000025)
+10:54:04.762215 http.c:889              <= Recv header: Date: Tue, 21 Apr 2026 
+14:54:05 GMT
+10:54:04.762215 http.c:877              <= Recv header, 0000000059 bytes 
+(0x0000003b)
+10:54:04.762215 http.c:889              <= Recv header: X-GitHub-Request-Id: 
+D73D:22CDB3:56E88F5:7D50E68:69E78F8D
+10:54:04.762215 http.c:877              <= Recv header, 0000000023 bytes 
+(0x00000017)
+10:54:04.762215 http.c:889              <= Recv header: X-Frame-Options: DENY
+10:54:04.762215 http.c:877              <= Recv header, 0000000073 bytes 
+(0x00000049)
+10:54:04.762215 http.c:889              <= Recv header: 
+Strict-Transport-Security: max-age=31536000; includeSubDomains; preload
+10:54:04.762215 http.c:877              <= Recv header, 0000000045 bytes 
+(0x0000002d)
+10:54:04.762215 http.c:889              <= Recv header: Proxy-Support: 
+Session-Based-Authentication
+10:54:04.762215 http.c:877              <= Recv header, 0000000002 bytes 
+(0x00000002)
+10:54:04.762215 http.c:889              <= Recv header:
+10:54:04.762215 http.c:930              == Info: Connection #0 to host 
+github.com:443 left intact
+10:54:04.763213 run-command.c:674       trace: run_command: 'git 
+credential-manager get'
+10:54:04.763213 run-command.c:935       trace: start_command: 
+C:/Users/570015767/AppData/Local/Programs/Git/usr/bin/sh.exe -c 'git 
+credential-manager get' 'git credential-manager get'
+10:54:04.885320 exec-cmd.c:266          trace: resolved executable dir: 
+C:/Users/570015767/AppData/Local/Programs/Git/mingw64/libexec/git-core
+10:54:04.898313 git.c:809               trace: exec: git-credential-manager get
+10:54:04.898313 run-command.c:674       trace: run_command: 
+git-credential-manager get
+10:54:04.898313 run-command.c:935       trace: start_command: 
+git-credential-manager get
+10:54:05.072343 exec-cmd.c:266          trace: resolved executable dir: 
+C:/Users/570015767/AppData/Local/Programs/Git/mingw64/libexec/git-core
+10:54:05.085334 git.c:502               trace: built-in: git config --null 
+--list
+10:54:05.352494 exec-cmd.c:266          trace: resolved executable dir: 
+C:/Users/570015767/AppData/Local/Programs/Git/mingw64/libexec/git-core
+10:54:05.362496 git.c:502               trace: built-in: git version
+10:54:05.422566 exec-cmd.c:266          trace: resolved executable dir: 
+C:/Users/570015767/AppData/Local/Programs/Git/mingw64/libexec/git-core
+10:54:05.435562 git.c:502               trace: built-in: git config --null 
+--type=path credential.https://github.com.gitHubHelper
+10:54:05.481619 exec-cmd.c:266          trace: resolved executable dir: 
+C:/Users/570015767/AppData/Local/Programs/Git/mingw64/libexec/git-core
+10:54:05.493600 git.c:502               trace: built-in: git config --null 
+--type=path credential.github.com.gitHubHelper
+10:54:05.539615 exec-cmd.c:266          trace: resolved executable dir: 
+C:/Users/570015767/AppData/Local/Programs/Git/mingw64/libexec/git-core
+10:54:05.551607 git.c:502               trace: built-in: git config --null 
+--type=path credential.gitHubHelper
+
